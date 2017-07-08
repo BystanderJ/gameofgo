@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("GoG.WinRT")]
+[assembly: AssemblyTitle("The Game of Go")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("The Game of Go")]
-[assembly: AssemblyCopyright("Copyright © 2013 Chris Bordeman")]
+[assembly: AssemblyCopyright("Copyright © 2017 Chris Bordeman")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

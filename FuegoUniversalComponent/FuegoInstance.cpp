@@ -89,7 +89,7 @@ namespace FuegoLib
 		stringstream outstr(ios::in | ios::out);
 		GtpOutputStream goout(outstr);
 
-		// Process command, which writes to _outstr.
+		// Process command, which writes to outstr.
 		_e->MainLoop(goin, goout);
 
 		// Change std::string to platform string.

@@ -17,8 +17,8 @@
     <SccLocalPath>SAK</SccLocalPath>
     <SccAuxPath>SAK</SccAuxPath>
     <SccProvider>SAK</SccProvider>
-    <TargetPlatformVersion>10.0.10586.0</TargetPlatformVersion>
-    <TargetPlatformMinVersion>10.0.10240.0</TargetPlatformMinVersion>
+    <TargetPlatformVersion>10.0.14393.0</TargetPlatformVersion>
+    <TargetPlatformMinVersion>10.0.14393.0</TargetPlatformMinVersion>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <MinimumVisualStudioVersion>14</MinimumVisualStudioVersion>
     <EnableDotNetNativeCompatibleProfile>true</EnableDotNetNativeCompatibleProfile>
@@ -132,9 +132,6 @@
       <DependentUpon>HistoryItemUserControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Views\MainPage.xaml.cs">
-      <DependentUpon>MainPage.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Views\SinglePlayerPage.xaml.cs">
       <DependentUpon>SinglePlayerPage.xaml</DependentUpon>
     </Compile>
@@ -164,17 +161,6 @@
       <SubType>Designer</SubType>
     </AppxManifest>
     <None Include="packages.config" />
-    <None Include="Properties\DataSources\GoG.Infrastructure.Services.Engine.GoGameStateResponse.datasource" />
-    <None Include="Properties\DataSources\GoG.Infrastructure.Services.Engine.GoHintResponse.datasource" />
-    <None Include="Properties\DataSources\GoG.Infrastructure.Services.Engine.GoMoveResponse.datasource" />
-    <None Include="Properties\DataSources\GoG.Infrastructure.Services.Engine.GoPositionsResponse.datasource" />
-    <None Include="Properties\DataSources\GoG.Infrastructure.Services.Engine.GoResponse.datasource" />
-    <None Include="Properties\DataSources\GoG.Infrastructure.Services.Engine.GoSaveSVGResponse.datasource" />
-    <None Include="Properties\DataSources\GoG.Infrastructure.Services.GoGameStateResponse.datasource" />
-    <None Include="Properties\DataSources\GoG.Infrastructure.Services.GoMoveResponse.datasource" />
-    <None Include="Properties\DataSources\GoG.Infrastructure.Services.GoPositionsResponse.datasource" />
-    <None Include="Properties\DataSources\GoG.Infrastructure.Services.GoResponse.datasource" />
-    <None Include="Properties\DataSources\GoG.Infrastructure.Services.GoScoreResponse.datasource" />
     <None Include="Properties\ServiceReferences.Designer.ClientConfig" />
   </ItemGroup>
   <ItemGroup>
@@ -212,10 +198,6 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Views\MainPage.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="Views\SinglePlayerPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -224,7 +206,9 @@
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Properties\DataSources\" />
+  </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
   </PropertyGroup>
