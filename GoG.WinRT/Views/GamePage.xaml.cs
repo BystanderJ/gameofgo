@@ -17,8 +17,8 @@ namespace GoG.WinRT.Views
         {
             InitializeComponent();
 
-            // Set the min size to 500 * 400
-            ApplicationView.GetForCurrentView().SetPreferredMinSize(new Size { Width = 500, Height = 400 });
+            // Set the min size to 330 * 400
+            ApplicationView.GetForCurrentView().SetPreferredMinSize(new Size { Width = 330, Height = 400 });
 
             SizeChanged += OnSizeChanged;
             DataContextChanged += OnDataContextChanged;
@@ -32,7 +32,6 @@ namespace GoG.WinRT.Views
             if (_viewModel != null)
                 _viewModel.PropertyChanged -= ViewModelOnPropertyChanged;
             
-
             _viewModel = DataContext as GamePageViewModel;
             
             // Subscribe to new viewmodel's events.
@@ -95,8 +94,8 @@ namespace GoG.WinRT.Views
                 LeftColumn.Width = new GridLength(1, GridUnitType.Star);
                 RightColumn.Width = new GridLength(0, GridUnitType.Pixel);
 
-                backButton.Style = Application.Current.Resources["SnappedBackButtonStyle"] as Style;
-                pageTitle.Style = Application.Current.Resources["SnappedPageHeaderTextStyle"] as Style;
+                //backButton.Style = Application.Current.Resources["SnappedBackButtonStyle"] as Style;
+                //pageTitle.Style = Application.Current.Resources["SnappedPageHeaderTextStyle"] as Style;
 
                 Dispatcher.RunAsync(CoreDispatcherPriority.High, () =>
                     {
@@ -116,8 +115,8 @@ namespace GoG.WinRT.Views
                 LeftColumn.Width = new GridLength(1, GridUnitType.Auto);
                 RightColumn.Width = new GridLength(1, GridUnitType.Star);
 
-                backButton.Style = Application.Current.Resources["BackButtonStyle"] as Style;
-                pageTitle.Style = Application.Current.Resources["PageHeaderTextStyle"] as Style;
+                //backButton.Style = Application.Current.Resources["BackButtonStyle"] as Style;
+                //pageTitle.Style = Application.Current.Resources["PageHeaderTextStyle"] as Style;
 
                 Dispatcher.RunAsync(CoreDispatcherPriority.High, () =>
                     {

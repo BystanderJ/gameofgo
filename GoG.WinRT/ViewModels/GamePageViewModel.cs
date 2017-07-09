@@ -27,13 +27,8 @@ namespace GoG.WinRT.ViewModels
         #region Data
 
         private string _hint;
-        //private Space _blackLastMove;
-        //private HashSet<Space> _blackRecentCaptures;
-        //private Space _whiteLastMove;
-        //private HashSet<Space> _whiteRecentCaptures;
         private PlayerViewModel[] _players;
-
-
+                
         #endregion Data
 
         #region Properties
@@ -471,6 +466,8 @@ namespace GoG.WinRT.ViewModels
         {
             try
             {
+                AbortOperation = false;
+
                 base.OnNavigatedTo(e, viewModelState);
 
                 // If a SinglePlayerPageViewModel is passed in, this is a new game
@@ -521,7 +518,6 @@ namespace GoG.WinRT.ViewModels
                 case PlayerType.Remote:
                     // Other player's turn.
                     // TODO: Implement this.
-                    // Perhaps look into push notifications?
                     throw new NotImplementedException();
             }
         }
@@ -780,16 +776,14 @@ namespace GoG.WinRT.ViewModels
                     case GoOperation.NormalMove:
                     case GoOperation.Pass:
                     case GoOperation.Resign:
-                        WaitAndRetryLoadGameFromServerAsync(5000, "Syncronizing...");
-                        break;
                     case GoOperation.Idle:
+                        if (AbortOperation)
+                            break;
                         RunOnUIThread(() =>
                         {
-                            if (!AbortOperation && Status == GoGameStatus.Active)
-                                //RunOnUIThread(PlayCurrentUser);
-                                PlayCurrentUser();
-                            else
-                                Debug.Assert(false, "This shouldn't happen.");
+                            SetState(resp.GameState.Status, resp.GameState.WinMargin);
+                            if (Status == GoGameStatus.Active)
+                                    PlayCurrentUser();
                         });
                         break;
                 }
@@ -887,7 +881,7 @@ namespace GoG.WinRT.ViewModels
         private void SetState(GoGameStatus status, decimal margin)
         {
             Status = status;
-
+            
             var humanPlayer = Player1.PlayerType == PlayerType.Human ? Player1 : Player2;
             var aiPlayer = Player1.PlayerType == PlayerType.Human ? Player2 : Player1;
 
@@ -938,7 +932,7 @@ namespace GoG.WinRT.ViewModels
             }
         }
 
-        
+
 
         #endregion Private
     }

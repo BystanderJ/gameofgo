@@ -14,8 +14,8 @@ namespace GoG.WinRT.Views
 
             SizeChanged += OnSizeChanged;
 
-            // Set the min size to 500 * 400
-            ApplicationView.GetForCurrentView().SetPreferredMinSize(new Size { Width = 500, Height = 400 });            
+            // Set the min size to 330 * 400
+            ApplicationView.GetForCurrentView().SetPreferredMinSize(new Size { Width = 330, Height = 400 });
         }
 
         private void OnSizeChanged(object sender, SizeChangedEventArgs sizeChangedEventArgs)
