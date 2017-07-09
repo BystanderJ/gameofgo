@@ -23,8 +23,7 @@ using GoG.Infrastructure.Engine;
 
 namespace GoG.Board
 {
-    [TemplatePart(Name = "PART_GameCanvas", Type = typeof(Canvas))]
-    public sealed class GameBoard : Control
+        public sealed class GameBoard : Control
     {
         private Grid _topGrid;
         private Storyboard _displayMessageStoryboard;

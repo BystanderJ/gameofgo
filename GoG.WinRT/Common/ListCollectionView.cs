@@ -156,7 +156,7 @@ namespace GoG.WinRT.Common
         /// </summary>
         protected virtual void OnVectorChanged(IVectorChangedEventArgs e)
         {
-            if (this.IsAddingNew || this.IsEditingItem)
+            if (IsAddingNew || IsEditingItem)
             {
                 throw new NotSupportedException("Cannot change collection while adding or editing items.");
             }
@@ -680,7 +680,7 @@ namespace GoG.WinRT.Common
                 _addItem = Activator.CreateInstance(_itemType);
                 if (_addItem != null)
                 {
-                    this.Add(_addItem);
+                    Add(_addItem);
                 }
             }
             return _addItem;
@@ -689,7 +689,7 @@ namespace GoG.WinRT.Common
         {
             if (_addItem != null)
             {
-                this.Remove(_addItem);
+                Remove(_addItem);
                 _addItem = null;
             }
         }

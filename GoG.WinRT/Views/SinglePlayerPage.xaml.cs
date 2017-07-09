@@ -1,21 +1,21 @@
-﻿using Windows.Foundation;
+﻿using GoG.WinRT.ViewModels;
+using Windows.Foundation;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
-using GoG.WinRT.ViewModels;
 using Windows.UI.Xaml.Controls;
 
 namespace GoG.WinRT.Views
 {
-    public sealed partial class SinglePlayerPage 
+    public sealed partial class SinglePlayerPage : NavigationAwarePage
     {
         public SinglePlayerPage()
         {
-            this.InitializeComponent();
+            InitializeComponent();
 
-            // Set the min size to 250 * 400
-            ApplicationView.GetForCurrentView().SetPreferredMinSize(new Size { Width = 330, Height = 400 });
+            SizeChanged += OnSizeChanged;
 
-            this.SizeChanged += OnSizeChanged;
+            // Set the min size to 500 * 400
+            ApplicationView.GetForCurrentView().SetPreferredMinSize(new Size { Width = 500, Height = 400 });            
         }
 
         private void OnSizeChanged(object sender, SizeChangedEventArgs sizeChangedEventArgs)
@@ -24,14 +24,14 @@ namespace GoG.WinRT.Views
             {
                 OptionsGrid.Margin = new Thickness(10,0,0,0);
 
-                BackButton.Style = Application.Current.Resources["SnappedBackButtonStyle"] as Style;
+                //BackButton.Style = Application.Current.Resources["SnappedBackButtonStyle"] as Style;
                 PageTitle.Style = Application.Current.Resources["SnappedPageHeaderTextStyle"] as Style;
             }
             else
             {
                 OptionsGrid.Margin = new Thickness(120, 0, 0, 0);
 
-                BackButton.Style = Application.Current.Resources["BackButtonStyle"] as Style;
+                //BackButton.Style = Application.Current.Resources["BackButtonStyle"] as Style;
                 PageTitle.Style = Application.Current.Resources["PageHeaderTextStyle"] as Style;
             }
         }

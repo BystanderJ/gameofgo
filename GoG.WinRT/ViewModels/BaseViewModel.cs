@@ -3,11 +3,12 @@ using System.Threading.Tasks;
 using Windows.UI.Core;
 using GoG.Infrastructure;
 using GoG.Infrastructure.Engine;
-using Microsoft.Practices.Prism.Mvvm;
+using Prism.Mvvm;
+using Prism.Windows.Mvvm;
 
 namespace GoG.WinRT.ViewModels
 {
-    public class BaseViewModel : ViewModel
+    public class BaseViewModel : ViewModelBase
     {
         #region Helpers
 

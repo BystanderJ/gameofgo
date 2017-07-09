@@ -54,7 +54,7 @@ namespace GoG.WinRT.Common
         /// </summary>
         public RichTextColumns()
         {
-            this.HorizontalAlignment = HorizontalAlignment.Left;
+            HorizontalAlignment = HorizontalAlignment.Left;
         }
 
         /// <summary>
@@ -110,46 +110,46 @@ namespace GoG.WinRT.Common
         /// <returns>The resulting size of the original content plus any extra columns.</returns>
         protected override Size MeasureOverride(Size availableSize)
         {
-            if (this.RichTextContent == null) return new Size(0, 0);
+            if (RichTextContent == null) return new Size(0, 0);
 
             // Make sure the RichTextBlock is a child, using the lack of
             // a list of additional columns as a sign that this hasn't been
             // done yet
-            if (this._overflowColumns == null)
+            if (_overflowColumns == null)
             {
-                Children.Add(this.RichTextContent);
-                this._overflowColumns = new List<RichTextBlockOverflow>();
+                Children.Add(RichTextContent);
+                _overflowColumns = new List<RichTextBlockOverflow>();
             }
 
             // Start by measuring the original RichTextBlock content
-            this.RichTextContent.Measure(availableSize);
-            var maxWidth = this.RichTextContent.DesiredSize.Width;
-            var maxHeight = this.RichTextContent.DesiredSize.Height;
-            var hasOverflow = this.RichTextContent.HasOverflowContent;
+            RichTextContent.Measure(availableSize);
+            var maxWidth = RichTextContent.DesiredSize.Width;
+            var maxHeight = RichTextContent.DesiredSize.Height;
+            var hasOverflow = RichTextContent.HasOverflowContent;
 
             // Make sure there are enough overflow columns
             int overflowIndex = 0;
-            while (hasOverflow && maxWidth < availableSize.Width && this.ColumnTemplate != null)
+            while (hasOverflow && maxWidth < availableSize.Width && ColumnTemplate != null)
             {
                 // Use existing overflow columns until we run out, then create
                 // more from the supplied template
                 RichTextBlockOverflow overflow;
-                if (this._overflowColumns.Count > overflowIndex)
+                if (_overflowColumns.Count > overflowIndex)
                 {
-                    overflow = this._overflowColumns[overflowIndex];
+                    overflow = _overflowColumns[overflowIndex];
                 }
                 else
                 {
-                    overflow = (RichTextBlockOverflow)this.ColumnTemplate.LoadContent();
-                    this._overflowColumns.Add(overflow);
-                    this.Children.Add(overflow);
+                    overflow = (RichTextBlockOverflow)ColumnTemplate.LoadContent();
+                    _overflowColumns.Add(overflow);
+                    Children.Add(overflow);
                     if (overflowIndex == 0)
                     {
-                        this.RichTextContent.OverflowContentTarget = overflow;
+                        RichTextContent.OverflowContentTarget = overflow;
                     }
                     else
                     {
-                        this._overflowColumns[overflowIndex - 1].OverflowContentTarget = overflow;
+                        _overflowColumns[overflowIndex - 1].OverflowContentTarget = overflow;
                     }
                 }
 
@@ -163,20 +163,20 @@ namespace GoG.WinRT.Common
 
             // Disconnect extra columns from the overflow chain, remove them from our private list
             // of columns, and remove them as children
-            if (this._overflowColumns.Count > overflowIndex)
+            if (_overflowColumns.Count > overflowIndex)
             {
                 if (overflowIndex == 0)
                 {
-                    this.RichTextContent.OverflowContentTarget = null;
+                    RichTextContent.OverflowContentTarget = null;
                 }
                 else
                 {
-                    this._overflowColumns[overflowIndex - 1].OverflowContentTarget = null;
+                    _overflowColumns[overflowIndex - 1].OverflowContentTarget = null;
                 }
-                while (this._overflowColumns.Count > overflowIndex)
+                while (_overflowColumns.Count > overflowIndex)
                 {
-                    this._overflowColumns.RemoveAt(overflowIndex);
-                    this.Children.RemoveAt(overflowIndex + 1);
+                    _overflowColumns.RemoveAt(overflowIndex);
+                    Children.RemoveAt(overflowIndex + 1);
                 }
             }
 

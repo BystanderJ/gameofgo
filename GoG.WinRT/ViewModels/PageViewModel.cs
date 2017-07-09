@@ -1,12 +1,9 @@
-﻿
-using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using GoG.WinRT.Services;
-using Microsoft.Practices.Prism.Commands;
-using Microsoft.Practices.Prism.Mvvm.Interfaces;
-using Microsoft.Practices.Prism.StoreApps;
-using Microsoft.Practices.Prism.StoreApps.Interfaces;
 using Microsoft.Practices.Unity;
+using Prism.Windows.Navigation;
+using Prism.Commands;
+using System.Collections.Generic;
 
 namespace GoG.WinRT.ViewModels
 {
@@ -49,9 +46,9 @@ namespace GoG.WinRT.ViewModels
         #endregion Commands
 
         #region Virtuals
-        public override void OnNavigatedFrom(System.Collections.Generic.Dictionary<string, object> viewState, bool suspending)
+        public override void OnNavigatingFrom(NavigatingFromEventArgs e, Dictionary<string, object> viewModelState, bool suspending)
         {
-            base.OnNavigatedFrom(viewState, suspending);
+            base.OnNavigatingFrom(e, viewModelState, suspending);
 
             AbortOperation = true;
         }
@@ -85,7 +82,7 @@ namespace GoG.WinRT.ViewModels
                 if (_isBusy != value)
                 {
                     _isBusy = value;
-                    this.OnPropertyChanged("IsBusy");
+                    OnPropertyChanged("IsBusy");
                     OnIsBusyChanged();
                 }
             }

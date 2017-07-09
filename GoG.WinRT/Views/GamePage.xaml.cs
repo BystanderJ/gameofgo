@@ -11,17 +11,17 @@ namespace GoG.WinRT.Views
     /// <summary>
     /// A basic page that provides characteristics common to most applications.
     /// </summary>
-    public sealed partial class GamePage
+    public sealed partial class GamePage : NavigationAwarePage
     {
         public GamePage()
         {
-            this.InitializeComponent();
+            InitializeComponent();
 
-            // Set the min size to 250 * 400
-            ApplicationView.GetForCurrentView().SetPreferredMinSize(new Size { Width = 330, Height = 400 });
+            // Set the min size to 500 * 400
+            ApplicationView.GetForCurrentView().SetPreferredMinSize(new Size { Width = 500, Height = 400 });
 
-            this.SizeChanged += OnSizeChanged;
-            this.DataContextChanged += OnDataContextChanged;
+            SizeChanged += OnSizeChanged;
+            DataContextChanged += OnDataContextChanged;
         }
 
         private GamePageViewModel _viewModel;
@@ -88,7 +88,7 @@ namespace GoG.WinRT.Views
         {
             if (sizeChangedEventArgs.NewSize.Width < sizeChangedEventArgs.NewSize.Height)
             {
-                TopRow.Height = new GridLength(100, GridUnitType.Pixel);
+                //TopRow.Height = new GridLength(100, GridUnitType.Pixel);
 
                 BigBoard.Visibility = Visibility.Collapsed;
                 SmallBoard.Visibility = Visibility.Visible;
@@ -109,7 +109,7 @@ namespace GoG.WinRT.Views
             }
             else
             {
-                TopRow.Height = new GridLength(140, GridUnitType.Pixel);
+                //TopRow.Height = new GridLength(140, GridUnitType.Pixel);
 
                 BigBoard.Visibility = Visibility.Visible;
                 SmallBoard.Visibility = Visibility.Collapsed;
@@ -121,7 +121,7 @@ namespace GoG.WinRT.Views
 
                 Dispatcher.RunAsync(CoreDispatcherPriority.High, () =>
                     {
-                        var size = Math.Min(this.ActualHeight, RightColumn.ActualWidth);
+                        var size = Math.Min(ActualHeight, RightColumn.ActualWidth);
                         //BigBoardScrollViewer.Width = BigBoardScrollViewer.Height = size;
                         BigBoard.Width = BigBoard.Height = size;
 

@@ -1,9 +1,8 @@
-﻿using Microsoft.Practices.Prism.Mvvm;
-using Microsoft.Practices.Prism.StoreApps;
+﻿using Prism.Windows.Mvvm;
 
 namespace GoG.WinRT.ViewModels
 {
-    public class GameSettingsViewModel : ViewModel
+    public class GameSettingsViewModel : ViewModelBase
     {
         private bool _isLastMoveIndicatorShowing;
         /// <summary>

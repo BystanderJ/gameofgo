@@ -1,9 +1,9 @@
 ﻿using GoG.Infrastructure.Engine;
-using Microsoft.Practices.Prism.Mvvm;
+using Prism.Windows.Mvvm;
 
 namespace GoG.WinRT.ViewModels
 {
-    public class PlayerViewModel : ViewModel
+    public class PlayerViewModel : ViewModelBase
     {
         public PlayerViewModel(GoPlayer p, GoColor color)
         {

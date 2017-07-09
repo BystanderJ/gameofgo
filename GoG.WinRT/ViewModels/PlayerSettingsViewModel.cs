@@ -1,10 +1,10 @@
 ﻿//
-//using Microsoft.Practices.Prism.Mvvm;
+//using Prism.Mvvm;
 //using Microsoft.Practices.Prism.StoreApps;
 
 //namespace GoG.WinRT.ViewModels
 //{
-//    public class PlayerSettingsViewModel : ViewModel
+//    public class PlayerSettingsViewModel : ViewModelBase
 //    {
 //        private string _name;
 //        public string Name

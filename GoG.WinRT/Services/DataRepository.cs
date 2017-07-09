@@ -5,9 +5,10 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Threading.Tasks;
 using GoG.Infrastructure;
-using Microsoft.Practices.Prism.Mvvm.Interfaces;
+using Prism.Unity.Windows;
 using GoG.Infrastructure.Engine;
 using GoG.Infrastructure.Services.Engine;
+using Prism.Windows.AppModel;
 
 namespace GoG.WinRT.Services
 {

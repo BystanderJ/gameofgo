@@ -9,7 +9,7 @@ namespace GoG.WinRT.Views
     {
         public HistoryItemUserControl()
         {
-            this.InitializeComponent();
+            InitializeComponent();
 
             DataContextChanged += HistoryItemUserControl_DataContextChanged;
         }

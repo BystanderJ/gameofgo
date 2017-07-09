@@ -1,44 +1,42 @@
-﻿using System;
+﻿using GoG.Infrastructure.Engine;
+using GoG.WinRT.Services;
+using Microsoft.HockeyApp;
+using Microsoft.Practices.Unity;
+using Prism.Unity.Windows;
+using System;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Practices.Unity;
 using Windows.ApplicationModel.Activation;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using GoG.Infrastructure.Engine;
-using GoG.WinRT.Services;
-using Microsoft.HockeyApp;
-using Microsoft.Practices.Prism.Mvvm;
-using Microsoft.Practices.Prism.Mvvm.Interfaces;
 
 namespace GoG.WinRT
 {
     /// <summary>
     /// Provides application-specific behavior to supplement the default Application class.
     /// </summary>
-    sealed partial class App : MvvmAppBase
+    sealed partial class App : PrismUnityApplication
     {
         public App()
         {
-            HockeyClient.Current.Configure("98be9ebbbbd7439cbb22b51a29fd6e51",
-                new TelemetryConfiguration()
-                {
-                    DescriptionLoader = ex =>
+            HockeyClient.Current.Configure("98be9ebbbbd7439cbb22b51a29fd6e51")
+                .SetExceptionDescriptionLoader(
+                    ex =>
                     {
                         var msg = new StringBuilder();
 
                         ex = ex.GetBaseException();
 
                         msg.AppendLine("Base Exception Type: " + ex.GetType().FullName);
-                        
+
                         if (_container != null)
                         {
-                            var nav = this.NavigationService;
+                            var nav = base.NavigationService;
                             if (nav != null)
                                 msg.AppendLine("INavigationService.CanGoBack() == " + nav.CanGoBack());
 
                         }
-                        
+
                         if (Window.Current == null)
                             msg.AppendLine("Window.Current is NULL.");
                         else
@@ -77,14 +75,19 @@ namespace GoG.WinRT
                         msg.AppendLine($"Message: {ex.Message}\nException HResult: {ex.HResult}");
 
                         return msg.ToString();
-                    }
-                });
+                    });
 
-            this.InitializeComponent();
+            InitializeComponent();
 
             this.UnhandledException += OnUnhandledException;
+            TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
+            
+            RequestedTheme = ApplicationTheme.Dark;
+        }
 
-            this.RequestedTheme = ApplicationTheme.Dark;
+        private void TaskScheduler_UnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
+        {
+            
         }
 
         private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
@@ -125,6 +128,8 @@ namespace GoG.WinRT
 
             base.OnLaunched(args);
 
+            //NavigationService.
+
             //HockeyClient.Current.Configure();TrackEvent("Event1");
         }
 
@@ -133,7 +138,7 @@ namespace GoG.WinRT
         /// to the page approriate based on a search, sharing, or secondary tile launch of the app
         /// </summary>
         /// <param name="args">The launch arguments passed to the application</param>
-        protected override async Task OnLaunchApplicationAsync(LaunchActivatedEventArgs args)
+        protected override Task OnLaunchApplicationAsync(LaunchActivatedEventArgs args)
         {
             // Use the logical name for the view to navigate to. The default convention
             // in the NavigationService will be to append "Page" to the name and look 
@@ -142,26 +147,28 @@ namespace GoG.WinRT
             // the MvvmAppBase.GetPageNameToTypeResolver method
             if (args.PreviousExecutionState != ApplicationExecutionState.Terminated)
                 NavigationService.Navigate("SinglePlayer", null);
-        }
 
-        
+            return Task.FromResult<object>(null);
+        }        
 
         /// <summary>
         /// This is the place you initialize your services and set default factory or default resolver for the view model locator
         /// </summary>
         /// <param name="args">The same launch arguments passed when the app starts.</param>
-        protected override async Task OnInitializeAsync(IActivatedEventArgs args)
+        protected override Task OnInitializeAsync(IActivatedEventArgs args)
         {
             // Register MvvmAppBase services with the container so that view models can take dependencies on them
-            _container.RegisterInstance<ISessionStateService>(SessionStateService);
-            _container.RegisterInstance<INavigationService>(NavigationService);
+            _container.RegisterInstance(SessionStateService);
+            _container.RegisterInstance(NavigationService);
+            
             // Register any app specific types with the container
             _container.RegisterType(typeof(IDataRepository), typeof(DataRepository), new ContainerControlledLifetimeManager());
 
             // Set a factory for the ViewModelLocator to use the container to construct view models so their 
             // dependencies get injected by the container
-            ViewModelLocationProvider.SetDefaultViewModelFactory((viewModelType) => _container.Resolve(viewModelType));
-
+            Prism.Mvvm.ViewModelLocationProvider.SetDefaultViewModelFactory((viewModelType) => Resolve(viewModelType));
+            
+            return Task.FromResult<object>(null);
         }
         
         protected override object Resolve(Type type)

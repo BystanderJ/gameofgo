@@ -358,9 +358,9 @@
     <Language Code="zu-za" InMinimumRequirementSet="true" />
   </SupportedLocales>
   <ProductReservedInfo>
-    <MainPackageIdentityName>53013ChrisBordeman.TheGameofGo</MainPackageIdentityName>
+    <MainPackageIdentityName>53013ChrisBordeman.TheGameofGo2</MainPackageIdentityName>
     <ReservedNames>
-      <ReservedName>The Game of Go</ReservedName>
+      <ReservedName>The Game of Go 2</ReservedName>
     </ReservedNames>
   </ProductReservedInfo>
   <AccountPackageIdentityNames>

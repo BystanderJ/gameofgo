@@ -1,22 +1,20 @@
-﻿using GoG.Infrastructure;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
-using GoG.Board;
-using Microsoft.Practices.Unity;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using Windows.System;
-using Windows.UI.Xaml.Navigation;
+﻿using GoG.Board;
+using GoG.Infrastructure;
 using GoG.Infrastructure.Engine;
 using GoG.Infrastructure.Services.Engine;
-using Microsoft.Practices.Prism.Commands;
-using Microsoft.Practices.Prism.Mvvm;
+using Microsoft.Practices.Unity;
+using Prism.Commands;
+using Prism.Windows.AppModel;
+using Prism.Windows.Navigation;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace GoG.WinRT.ViewModels
 {
-    [System.Runtime.InteropServices.Guid("1E724C54-5390-4AEA-AD0D-E46A527243B3")]
     public class GamePageViewModel : PageViewModel
     {
         #region Ctor
@@ -50,20 +48,8 @@ namespace GoG.WinRT.ViewModels
                 if (_messageText == value)
                     return;
 
-                _messageText = value; OnPropertyChanged("MessageText");
-
-                //if (!String.IsNullOrEmpty(MessageText))
-                //{
-                //    var e = DisplayMessageEvent;
-                //    if (e != null)
-                //        e(this, null);
-                //}
-                //else
-                //{
-                //    var e = HideMessageEvent;
-                //    if (e != null)
-                //        e(this, null);
-                //}
+                _messageText = value;
+                OnPropertyChanged("MessageText");                
             }
         }
         #endregion Message
@@ -222,20 +208,11 @@ namespace GoG.WinRT.ViewModels
 
             RaiseCommandsChanged();
         }
-
-        //public event EventHandler DisplayMessageEvent;
-        //public event EventHandler HideMessageEvent;
-
+        
         private async Task InvokeFleetingMessage(string msg, int delayMilliseconds)
         {
             MessageText = msg;
-            //var e = DisplayMessageEvent;
-            //if (e != null)
-            //    e(this, null);
             await Task.Delay(delayMilliseconds);
-            //var e2 = HideMessageEvent;
-            //if (e2 != null)
-            //    e2(this, null);
             MessageText = null;
         }
 
@@ -489,20 +466,19 @@ namespace GoG.WinRT.ViewModels
             RaiseCommandsChanged();
         }
 
-        public override async void OnNavigatedTo(object navigationParameter,
-                                                 NavigationMode navigationMode,
-                                                 Dictionary<string, object> viewState)
+        public override void OnNavigatedTo(NavigatedToEventArgs e, 
+            Dictionary<string, object> viewModelState)
         {
             try
             {
-                base.OnNavigatedTo(navigationParameter, navigationMode, viewState);
+                base.OnNavigatedTo(e, viewModelState);
 
                 // If a SinglePlayerPageViewModel is passed in, this is a new game
                 // just created by user.  If not, active game from restorable state is used.
-                if (navigationParameter is Guid)
+                if (e.Parameter is Guid)
                 {
                     // Start a single player game using the navigation parameter sent in.
-                    ActiveGame = (Guid)navigationParameter;
+                    ActiveGame = (Guid)e.Parameter;
                 }
 
                 if (ActiveGame == Guid.Empty)
@@ -512,32 +488,13 @@ namespace GoG.WinRT.ViewModels
                 }
                 else
                     LoadGameFromRepoAsync("Syncronizing...");
-
-                //base.OnNavigatedTo(navigationParameter, navigationMode, viewState);
-
-                //if (!(navigationParameter is Guid))
-                //{
-                //    this.GoBackDeferred();
-                //    return;
-                //}
-
-                //// Start a single player game using the navigation parameter sent in.
-                //ActiveGame = (Guid)navigationParameter;
-
-                //if (ActiveGame == Guid.Empty)
-                //{
-                //    await DisplayMessage("Error", "Please start a new game.");
-                //    GoBackDeferred();
-                //}
-                //else
-                //    LoadGameFromServerAsync("Syncronizing...");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine("EXCEPTION THROWN IN GamePageViewModel.OnNavigatedTo(" + (navigationParameter ?? "(NULL)") + ", " + navigationMode + ", " + (viewState.ToString() ?? "(NULL)"));
+                throw;
             }
-            
         }
+        
         #endregion Virtuals
 
         #region Private
@@ -870,7 +827,7 @@ namespace GoG.WinRT.ViewModels
             _players = new[] { Player1, Player2 };
 
             WhoseTurn = state.WhoseTurn == GoColor.Black ? 0 : 1;
-            OnPropertyChanged(nameof(WhoseTurn));
+            RaisePropertyChanged(nameof(WhoseTurn));
             CurrentTurnColor = _players[_whoseTurn].Color;
 
             SetState(state.Status, state.WinMargin);

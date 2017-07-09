@@ -1,11 +1,12 @@
 ﻿using System;
 using FuegoLib;
 using GoG.Infrastructure.Engine;
-using Microsoft.Practices.Prism.Mvvm;
+using Prism.Mvvm;
+using Prism.Windows.Mvvm;
 
 namespace GoG.Board
 {
-    public class PieceStateViewModel : ViewModel
+    public class PieceStateViewModel : ViewModelBase
     {
         public PieceStateViewModel(string position, string sequence, GoColor? color,
             bool isHint, bool isNewPiece, bool isNewCapture)

@@ -132,6 +132,7 @@
       <DependentUpon>HistoryItemUserControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Views\NavigationAwarePage.cs" />
     <Compile Include="Views\SinglePlayerPage.xaml.cs">
       <DependentUpon>SinglePlayerPage.xaml</DependentUpon>
     </Compile>
