@@ -10,7 +10,7 @@ namespace GoG.Infrastructure.Engine
         [DataMember]
         public PlayerType PlayerType { get; set; }
         [DataMember]
-        public decimal Score { get; set; }
+        public decimal Komi { get; set; }
         [DataMember]
         public int Level { get; set; }
     }

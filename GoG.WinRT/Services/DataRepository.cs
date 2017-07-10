@@ -115,10 +115,11 @@ namespace GoG.WinRT.Services
                 _state = state;
 
             _state.Operation = GoOperation.Starting;
+
             SaveState();
 
             _fuego.StartGame(_state.Size);
-
+            
             var level = _state.Player1.PlayerType == PlayerType.AI
                 ? _state.Player1.Level
                 : _state.Player2.Level;
@@ -129,17 +130,17 @@ namespace GoG.WinRT.Services
             if (level < 3)
             {
                 ParseResponse(WriteCommand("uct_param_player max_games",
-                    ((level + 1)*10).ToString(CultureInfo.InvariantCulture)));
+                    ((level + 1)*5).ToString(CultureInfo.InvariantCulture)));
             }
             else if (level < 6)
             {
                 ParseResponse(WriteCommand("uct_param_player max_games",
-                    (level*2000).ToString(CultureInfo.InvariantCulture)));
+                    (level*100).ToString(CultureInfo.InvariantCulture)));
             }
             else if (level < 9)
             {
                 ParseResponse(WriteCommand("uct_param_player max_games",
-                    (level*10000).ToString(CultureInfo.InvariantCulture)));
+                    (level*1000).ToString(CultureInfo.InvariantCulture)));
             }
             else //if (level < 9)
             {
@@ -147,8 +148,7 @@ namespace GoG.WinRT.Services
                     int.MaxValue.ToString(CultureInfo.InvariantCulture)));
             }
 
-            //WriteCommand("komi", state.Komi.ToString(CultureInfo.InvariantCulture));
-            //ReadResponse();
+            ParseResponse(WriteCommand("komi", state.Player2.Komi.ToString()));
             ParseResponse(WriteCommand("clear_board"));
             ParseResponse(WriteCommand("go_param_rules", "capture_dead 1"));
 

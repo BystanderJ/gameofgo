@@ -28,10 +28,18 @@ namespace GoG.WinRT.ViewModels
 
         private string _hint;
         private PlayerViewModel[] _players;
-                
+
         #endregion Data
 
         #region Properties
+
+        private bool _showingArea;
+        [RestorableState]
+        public bool ShowingArea
+        {
+            get { return _showingArea; }
+            set { SetProperty(ref _showingArea, value); }
+        }
 
         #region MessageText
         private string _messageText;
@@ -55,7 +63,7 @@ namespace GoG.WinRT.ViewModels
         public Guid ActiveGame
         {
             get { return _activeGame; }
-            set { _activeGame = value; OnPropertyChanged("ActiveGame"); }
+            set { _activeGame = value; RaisePropertyChanged(); }
         }
         #endregion ActiveGame
 
@@ -69,8 +77,8 @@ namespace GoG.WinRT.ViewModels
                 if (_status == value)
                     return;
                 _status = value;
-                OnPropertyChanged("Status");
-                GetHintCommand.RaiseCanExecuteChanged();
+                RaisePropertyChanged(nameof(Status));
+                RaiseCommandsChanged();
                 if (value != GoGameStatus.Active)
                     ClearHint();
             }
@@ -452,6 +460,26 @@ namespace GoG.WinRT.ViewModels
         }
         #endregion UndoCommand
 
+        #region ShowAreaCommand
+        DelegateCommand _ShowAreaCommand;
+        public DelegateCommand ShowAreaCommand
+        {
+            get { if (_ShowAreaCommand == null) _ShowAreaCommand = new DelegateCommand(ExecuteShowArea, CanShowArea); return _ShowAreaCommand; }
+        }
+        public bool CanShowArea()
+        {
+            if (_player1 == null || _player2 == null)
+                return false;
+            return true;
+        }
+        public async void ExecuteShowArea()
+        {
+            ShowingArea = !ShowingArea;
+            
+            RaiseCommandsChanged();
+        }
+        #endregion ShowAreaCommand
+        
         #endregion Commands
 
         #region Virtuals
@@ -503,6 +531,7 @@ namespace GoG.WinRT.ViewModels
             PressedCommand.RaiseCanExecuteChanged();
             ResignCommand.RaiseCanExecuteChanged();
             UndoCommand.RaiseCanExecuteChanged();
+            ShowAreaCommand.RaiseCanExecuteChanged();
         }
 
         private void PlayCurrentUser()
@@ -889,15 +918,15 @@ namespace GoG.WinRT.ViewModels
             {
                 case GoGameStatus.BlackWon:
                     if (humanPlayer.Color == GoColor.Black)
-                        MessageText = "You win by " + margin + " points!";
+                        MessageText = "You win by " + margin + "!";
                     else
-                        MessageText = aiPlayer.Name + " wins by " + margin + " points.";
+                        MessageText = aiPlayer.Name + " wins by " + margin + ".";
                     break;
                 case GoGameStatus.WhiteWon:
                     if (humanPlayer.Color == GoColor.White)
-                        MessageText = "You win by " + margin + " points!";
+                        MessageText = "You win by " + margin + "!";
                     else
-                        MessageText = aiPlayer.Name + " wins by " + margin + " points.";
+                        MessageText = aiPlayer.Name + " wins by " + margin + ".";
                     break;
                 case GoGameStatus.BlackWonDueToResignation:
                     if (humanPlayer.Color == GoColor.Black)

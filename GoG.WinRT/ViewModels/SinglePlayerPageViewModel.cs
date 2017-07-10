@@ -241,7 +241,10 @@ namespace GoG.WinRT.ViewModels
 
                     // Create game from user's selections.
                     var p1 = new GoPlayer();
-                    var p2 = new GoPlayer();
+                    var p2 = new GoPlayer()
+                    {
+                        Komi = 6.5M
+                    };
                     if (Color == (int)GoColor.Black)
                     {
                         p1.Name = Name;

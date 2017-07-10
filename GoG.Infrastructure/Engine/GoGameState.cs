@@ -31,35 +31,7 @@ namespace GoG.Infrastructure.Engine
             GoMoveHistory = goMoveHistory;
             WinMargin = winMargin;
         }
-
-        ///// <summary>
-        ///// Does a deep comparison.
-        ///// </summary>
-        //public override bool Equals(object obj)
-        //{
-        //    var o = obj as GoGameState;
-        //    if (o == null)
-        //        return false;
-        //    return Size == o.Size &&
-        //           Komi == o.Komi &&  // float comparisons can be off by a tiny amount; this corrects that potential error
-        //           Level == o.Level &&
-        //           WhoseTurn == o.WhoseTurn &&
-        //           AreSame(BlackPositions, o.BlackPositions) &&
-        //           AreSame(WhitePositions, o.WhitePositions);
-        //}
-
-        //// Compares two position arrays, which might contain the same pieces, but in a different order.
-        //private bool AreSame(string a, string b)
-        //{
-        //    if (a == null && b == null)
-        //        return true;
-        //    if (a == null || b == null)
-        //        return false;
-
-        //    // Everything in a should be b, and vice versa.
-        //    return a.All(b.Contains) && b.All(a.Contains);
-        //}
-
+                
         [DataMember]
         public GoGameStatus Status { get; set; }
         [DataMember]

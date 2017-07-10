@@ -1,12 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System;
-using System.Globalization;
 using GoG.Infrastructure;
 using System.Linq;
 using System.Windows.Input;
 using Windows.UI.Xaml.Media.Animation;
-using FuegoLib;
 using Windows.Foundation;
 using Windows.UI;
 using Windows.UI.Text;
@@ -16,14 +14,13 @@ using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Shapes;
 using GoG.Board.Extensions;
-using System.Text;
 using System.Threading.Tasks;
 using Windows.UI.Core;
 using GoG.Infrastructure.Engine;
 
 namespace GoG.Board
 {
-        public sealed class GameBoard : Control
+    public sealed class GameBoard : Control
     {
         private Grid _topGrid;
         private Storyboard _displayMessageStoryboard;
@@ -133,27 +130,9 @@ namespace GoG.Board
 
             if (edgesize == 0 || _gameBorder == null || _gridContainer == null)
                 return;
-
-            // Handle various GameViewModel events to trigger animations and visual state changes.
-            //_gameViewModel = DataContext as GameViewModel;
-            //if (_gameViewModel == null) return;
-            //_gameViewModel.ForcedPass += (s2, e2) =>
-            //{
-            //    PassStoryboard.Begin();
-            //    PassStoryboard.Completed += (s3, e3) => PassStoryboard.Stop();
-            //};
-            //_gameViewModel.PropertyChanged += (s2, e2) =>
-            //{
-            //    if (e2.PropertyName.Equals("IsGameOver")) UpdateState();
-            //};
-            //_gameViewModel.Clock.PropertyChanged += (s2, e2) =>
-            //{
-            //    if (e2.PropertyName.Equals("IsShowingPauseDisplay")) UpdateState();
-            //};
-
+            
             _pieces = new Dictionary<string, GamePiece>();
-
-            _pieces.Clear();
+            
             for (int i = _gridContainer.Children.Count - 1; i >= 0; i--)
             {
                 var e = _gridContainer.Children[i];

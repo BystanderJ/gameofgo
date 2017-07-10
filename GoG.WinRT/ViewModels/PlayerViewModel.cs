@@ -11,7 +11,7 @@ namespace GoG.WinRT.ViewModels
             _name = p.Name;
             _playerType = p.PlayerType;
             _level = p.Level;
-            _score = p.Score;
+            _komi = p.Komi;
         }
 
         #region MoveCount
@@ -51,20 +51,43 @@ namespace GoG.WinRT.ViewModels
             set { SetProperty(ref _color, value); }
         }
 
-        private decimal _score = 0;
+        private decimal _komi;
+        public decimal Komi
+        {
+            get { return _komi; }
+            set
+            {
+                if (SetProperty(ref _komi, value))
+                    RaisePropertyChanged(nameof(Score));
+            }
+        }
+
+        private int _area;
+        public int Area
+        {
+            get { return _area; }
+            set
+            {
+                if (SetProperty(ref _area, value))
+                    RaisePropertyChanged(nameof(Score));
+            }
+        }
+
+        private decimal _score;
         public decimal Score
         {
-            get { return _score; }
-            set { SetProperty(ref _score, value); }
+            get { return _komi + _prisoners + _area; }
         }
 
         private int _prisoners = 0;
         public int Prisoners
         {
             get { return _prisoners; }
-            set { SetProperty(ref _prisoners, value); }
+            set
+            {
+                if (SetProperty(ref _prisoners, value))
+                    RaisePropertyChanged(nameof(Score));
+            }
         }
-
-
     }
 }
