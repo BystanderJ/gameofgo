@@ -126,8 +126,8 @@
     <Compile Include="Common\SuspensionManager.cs" />
     <Compile Include="Converters.cs" />
     <Compile Include="Enums.cs" />
-    <Compile Include="Services\DataRepository.cs" />
-    <Compile Include="Services\IDataRepository.cs" />
+    <Compile Include="Services\FuegoGame.cs" />
+    <Compile Include="Services\IGame.cs" />
     <Compile Include="ViewModels\BaseViewModel.cs" />
     <Compile Include="ViewModels\Enums.cs" />
     <Compile Include="ViewModels\GameSettingsViewModel.cs" />

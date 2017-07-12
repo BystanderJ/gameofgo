@@ -87,7 +87,7 @@ namespace GoG.Infrastructure.Engine
         /// An error happened on the server that the client shouldn't know about.
         /// </summary>
         
-        ServerInternalError,
+        InternalError,
 
         /// <summary>
         /// The GameId passed in doesn't exist (or doesn't belong to the current user).

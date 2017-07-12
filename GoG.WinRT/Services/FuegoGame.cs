@@ -5,14 +5,13 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Threading.Tasks;
 using GoG.Infrastructure;
-using Prism.Unity.Windows;
 using GoG.Infrastructure.Engine;
 using GoG.Infrastructure.Services.Engine;
 using Prism.Windows.AppModel;
 
 namespace GoG.WinRT.Services
 {
-    public class DataRepository : IDataRepository
+    public class FuegoGame : IGame
     {
         #region Data
 
@@ -33,40 +32,21 @@ namespace GoG.WinRT.Services
         #endregion Data
 
         #region Ctor
-        public DataRepository(ISessionStateService sessionStateService)
+        public FuegoGame(ISessionStateService sessionStateService)
         {
             _sessionStateService = sessionStateService;
 
             if (sessionStateService.SessionState.ContainsKey(GameStateKey))
-            {
                 LoadState();
-            }
         }
         #endregion Ctor
 
         #region Fuego Implementation
 
-        public async Task<GoResponse> GetGameExists(Guid gameid)
+        public async Task<GoGameStateResponse> GetGameStateAsync()
         {
             try
             {
-                var matches = gameid != Guid.Empty && _state.GameId == gameid;
-                return new GoResponse(matches ? GoResultCode.Success : GoResultCode.GameDoesNotExist);
-            }
-            catch
-            {
-                // Any kind of error is assumed to be internet connectivity.
-                return new GoResponse(GoResultCode.CommunicationError);
-            }
-        }
-
-        public async Task<GoGameStateResponse> GetGameStateAsync(Guid gameid)
-        {
-            try
-            {
-                if (_state == null || _state.GameId == Guid.Empty || _state.GameId != gameid)
-                    return new GoGameStateResponse(GoResultCode.GameDoesNotExist, null);
-
                 return new GoGameStateResponse(GoResultCode.Success, _state);
             }
             catch
@@ -82,7 +62,7 @@ namespace GoG.WinRT.Services
         /// <param name="gameid"></param>
         /// <param name="state"></param>
         /// <returns></returns>
-        public async Task<GoGameStateResponse> StartAsync(Guid gameid, GoGameState state)
+        public async Task<GoGameStateResponse> StartAsync(GoGameState state)
         {
             GoGameStateResponse rval;
             try
@@ -93,7 +73,7 @@ namespace GoG.WinRT.Services
 
                 _fuego = new FuegoInstance();
 
-                await Task.Factory.StartNew(() => StartProcess(state));
+                await Task.Factory.StartNew(() => StartEngine(state));
 
                 rval = new GoGameStateResponse(GoResultCode.Success, state);
             }
@@ -103,13 +83,13 @@ namespace GoG.WinRT.Services
             }
             catch (Exception ex)
             {
-                rval = new GoGameStateResponse(GoResultCode.ServerInternalError, null);
+                rval = new GoGameStateResponse(GoResultCode.InternalError, null);
             }
 
             return rval;
         }
 
-        async Task StartProcess(GoGameState state)
+        private async Task StartEngine(GoGameState state)
         {
             if (state != null)
                 _state = state;
@@ -176,14 +156,12 @@ namespace GoG.WinRT.Services
                         (m.Move.Color == GoColor.Black ? "black" : "white") + ' ' + position));
                 }
             }
-
-
+            
             _state.Operation = GoOperation.Idle;
             SaveState();
         }
 
-
-        public async Task<GoMoveResponse> GenMoveAsync(Guid gameid, GoColor color)
+        public async Task<GoMoveResponse> GenMoveAsync(GoColor color)
         {
             GoMoveResponse rval = null;
 
@@ -240,7 +218,7 @@ namespace GoG.WinRT.Services
             }
             catch (Exception ex)
             {
-                rval = new GoMoveResponse(GoResultCode.ServerInternalError, null, null);
+                rval = new GoMoveResponse(GoResultCode.InternalError, null, null);
             }
             
             Debug.Assert(rval != null, "rval != null");
@@ -248,7 +226,7 @@ namespace GoG.WinRT.Services
             return rval;
         }
 
-        public async Task<GoMoveResponse> PlayAsync(Guid gameid, GoMove move)
+        public async Task<GoMoveResponse> PlayAsync(GoMove move)
         {
             GoMoveResponse rval;
 
@@ -307,7 +285,7 @@ namespace GoG.WinRT.Services
             }
             catch (Exception ex)
             {
-                rval = new GoMoveResponse(GoResultCode.ServerInternalError, null, null);
+                rval = new GoMoveResponse(GoResultCode.InternalError, null, null);
             }
             return rval;
         }
@@ -319,12 +297,12 @@ namespace GoG.WinRT.Services
                 await Task.Factory.StartNew(
                     () =>
                     {
-                        StartAsync(_state.GameId, _state).Wait();
+                        StartAsync(_state).Wait();
                     });
             }
         }
 
-        public async Task<GoHintResponse> HintAsync(Guid gameid, GoColor color)
+        public async Task<GoHintResponse> HintAsync(GoColor color)
         {
             GoHintResponse rval = null;
             try
@@ -365,14 +343,14 @@ namespace GoG.WinRT.Services
             }
             catch (Exception ex)
             {
-                rval = new GoHintResponse(GoResultCode.ServerInternalError, null);
+                rval = new GoHintResponse(GoResultCode.InternalError, null);
             }
 
             Debug.Assert(rval != null, "rval != null");
             return rval;
         }
 
-        public async Task<GoGameStateResponse> UndoAsync(Guid gameid)
+        public async Task<GoGameStateResponse> UndoAsync()
         {
             GoGameStateResponse rval = null;
             try
@@ -445,7 +423,7 @@ namespace GoG.WinRT.Services
             }
             catch (Exception ex)
             {
-                rval = new GoGameStateResponse(GoResultCode.ServerInternalError, null);
+                rval = new GoGameStateResponse(GoResultCode.InternalError, null);
             }
 
             Debug.Assert(rval != null, "rval != null");

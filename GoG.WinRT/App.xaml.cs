@@ -1,5 +1,6 @@
 ﻿using GoG.Infrastructure.Engine;
 using GoG.WinRT.Services;
+using GoG.WinRT.ViewModels;
 using Microsoft.HockeyApp;
 using Microsoft.Practices.Unity;
 using Prism.Unity.Windows;
@@ -29,7 +30,7 @@ namespace GoG.WinRT
 
                         msg.AppendLine("Base Exception Type: " + ex.GetType().FullName);
 
-                        if (_container != null)
+                        if (Container != null)
                         {
                             var nav = base.NavigationService;
                             if (nav != null)
@@ -97,9 +98,6 @@ namespace GoG.WinRT
             //var msg = $"Unhandled exception:\nType: {e.GetType().Name}\nMessage: {e.Message}";
         }
 
-        // New up the singleton container that will be used for type resolution in the app
-        readonly IUnityContainer _container = new UnityContainer();
-        
         protected override void OnRegisterKnownTypesForSerialization()
         {
             base.OnRegisterKnownTypesForSerialization();
@@ -157,23 +155,30 @@ namespace GoG.WinRT
         /// <param name="args">The same launch arguments passed when the app starts.</param>
         protected override Task OnInitializeAsync(IActivatedEventArgs args)
         {
-            // Register MvvmAppBase services with the container so that view models can take dependencies on them
-            _container.RegisterInstance(SessionStateService);
-            _container.RegisterInstance(NavigationService);
-            
-            // Register any app specific types with the container
-            _container.RegisterType(typeof(IDataRepository), typeof(DataRepository), new ContainerControlledLifetimeManager());
-
             // Set a factory for the ViewModelLocator to use the container to construct view models so their 
             // dependencies get injected by the container
             Prism.Mvvm.ViewModelLocationProvider.SetDefaultViewModelFactory((viewModelType) => Resolve(viewModelType));
-            
+
             return Task.FromResult<object>(null);
         }
         
         protected override object Resolve(Type type)
         {
-            return _container.Resolve(type);
+            if (!PrismUnityExtension.IsTypeRegistered(Container, type))
+                return null;
+            var obj = Container.Resolve(type);
+            return obj;
+        }
+
+        protected override void ConfigureContainer()
+        {
+            base.ConfigureContainer();
+            
+            // Register any app specific types with the container
+            Container.RegisterType(typeof(IGame), typeof(FuegoGame), new ContainerControlledLifetimeManager());
+
+            RegisterTypeIfMissing(typeof(SinglePlayerPageViewModel), typeof(SinglePlayerPageViewModel), true);
+            RegisterTypeIfMissing(typeof(GamePageViewModel), typeof(GamePageViewModel), true);            
         }
     }
 }

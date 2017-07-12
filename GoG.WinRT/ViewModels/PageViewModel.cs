@@ -1,9 +1,8 @@
-﻿using System.Threading.Tasks;
-using GoG.WinRT.Services;
-using Microsoft.Practices.Unity;
+﻿using Microsoft.Practices.Unity;
 using Prism.Windows.Navigation;
 using Prism.Commands;
 using System.Collections.Generic;
+using Prism.Windows.AppModel;
 
 namespace GoG.WinRT.ViewModels
 {
@@ -12,7 +11,7 @@ namespace GoG.WinRT.ViewModels
         #region Data
         protected readonly IUnityContainer Container;
         protected readonly INavigationService NavService;
-        protected readonly IDataRepository DataRepository;
+        protected readonly ISessionStateService SessionStateService;
         #endregion Data
 
         #region Ctor
@@ -20,7 +19,7 @@ namespace GoG.WinRT.ViewModels
         {
             Container = container;
             NavService = container.Resolve<INavigationService>();
-            DataRepository = container.Resolve<IDataRepository>();
+            SessionStateService = container.Resolve<ISessionStateService>();
         }
 
         #endregion Ctor
@@ -82,7 +81,7 @@ namespace GoG.WinRT.ViewModels
                 if (_isBusy != value)
                 {
                     _isBusy = value;
-                    OnPropertyChanged("IsBusy");
+                    RaisePropertyChanged();
                     OnIsBusyChanged();
                 }
             }
@@ -105,7 +104,7 @@ namespace GoG.WinRT.ViewModels
         /// <summary>
         /// Goes back, but on the UI thread and after any current navigation action has completed.
         /// </summary>
-        protected async Task GoBackDeferred()
+        protected void GoBackDeferred()
         {
             // Note: Calling NavService.GoBack() in context of an existing navigation action causes
             // an exception.  Hence the need for this helper method.

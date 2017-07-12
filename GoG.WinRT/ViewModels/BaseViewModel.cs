@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Windows.UI.Core;
 using GoG.Infrastructure;
 using GoG.Infrastructure.Engine;
-using Prism.Mvvm;
 using Prism.Windows.Mvvm;
 
 namespace GoG.WinRT.ViewModels

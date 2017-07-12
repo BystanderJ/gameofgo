@@ -65,7 +65,7 @@ namespace GoG.Infrastructure
                     msg = "Server is playing too many simultaneous games.  Please wait a minute and try again.";
                     break;
                 case GoResultCode.OtherEngineError:
-                case GoResultCode.ServerInternalError:
+                case GoResultCode.InternalError:
                     msg = "Something blew up!  Please try again.";
                     break;
                 case GoResultCode.GameAlreadyExists:

@@ -14,13 +14,13 @@ namespace GoG.Infrastructure.Engine
         {
         }
 
-        public GoGameState(Guid gameId, byte size,
+        public GoGameState(
+            byte size,
             GoPlayer player1, GoPlayer player2,
             GoGameStatus status,
             GoColor whoseTurn, string blackPositions, string whitePositions,
             List<GoMoveHistoryItem> goMoveHistory, decimal winMargin)
         {
-            GameId = gameId;
             Size = size;
             Player1 = player1;
             Player2 = player2;
@@ -43,8 +43,6 @@ namespace GoG.Infrastructure.Engine
         
         public GoOperation Operation { get; set; }
         
-        public Guid GameId { get; set; }
-
         /// <summary>
         /// Board edge size, usually 9x9, 13x13, or 19x19.
         /// </summary>

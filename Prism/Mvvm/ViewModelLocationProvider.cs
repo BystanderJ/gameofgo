@@ -104,7 +104,10 @@ namespace Prism.Mvvm
                 if (viewModelType == null)
                     return;
 
-                viewModel = _defaultViewModelFactoryWithViewParameter != null ? _defaultViewModelFactoryWithViewParameter(view, viewModelType) : _defaultViewModelFactory(viewModelType);
+                if (_defaultViewModelFactoryWithViewParameter != null)
+                    viewModel = _defaultViewModelFactoryWithViewParameter(view, viewModelType);
+                else
+                    viewModel = _defaultViewModelFactory(viewModelType);
             }
 
 

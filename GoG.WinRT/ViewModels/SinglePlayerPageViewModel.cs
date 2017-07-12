@@ -8,6 +8,8 @@ using GoG.Infrastructure.Services.Engine;
 using Prism.Commands;
 using Prism.Mvvm;
 using Prism.Windows.AppModel;
+using GoG.WinRT.Services;
+using System.Threading.Tasks;
 
 namespace GoG.WinRT.ViewModels
 {
@@ -63,17 +65,14 @@ namespace GoG.WinRT.ViewModels
         #region Properties
 
         #region ActiveGame
-        private Guid _activeGame;
-        [RestorableState]
-        // The server side guid storing our full game state.  The value is used to
-        // load the value of the other properties from the server.
-        public Guid ActiveGame
+        private IGame _activeGame;
+        public IGame ActiveGame
         {
             get { return _activeGame; }
             set
             {
                 SetProperty(ref _activeGame, value);
-                OnPropertyChanged("IsActiveGame");
+                RaisePropertyChanged();
             }
         }
         #endregion ActiveGame
@@ -81,7 +80,7 @@ namespace GoG.WinRT.ViewModels
         #region IsActiveGame
         public bool IsActiveGame
         {
-            get { return _activeGame != Guid.Empty; }
+            get { return _activeGame != null; }
         }
         #endregion IsActiveGame
 
@@ -237,8 +236,6 @@ namespace GoG.WinRT.ViewModels
                     BusyMessage = "Starting game...";
                     IsBusy = true;
 
-                    var tmpNewGame = Guid.NewGuid();
-
                     // Create game from user's selections.
                     var p1 = new GoPlayer();
                     var p2 = new GoPlayer()
@@ -265,7 +262,6 @@ namespace GoG.WinRT.ViewModels
 
                     }
                     var tmpState = new GoGameState(
-                        tmpNewGame,
                         (byte)BoardEdgeSize,
                         p1, p2,
                         GoGameStatus.Active,
@@ -274,11 +270,11 @@ namespace GoG.WinRT.ViewModels
                         "",
                         new List<GoMoveHistoryItem>(), 
                         0);
-                    resp = await DataRepository.StartAsync(tmpNewGame, tmpState);
+                    ActiveGame = Container.Resolve<FuegoGame>();
+                    await ActiveGame.StartAsync(tmpState);
                     BusyMessage = null;
                     IsBusy = false;
 
-                    ActiveGame = tmpNewGame;
                     success = true;
                 }
 
@@ -286,9 +282,7 @@ namespace GoG.WinRT.ViewModels
                     return;
 
                 if (success)
-                {
                     NavService.Navigate("Game", ActiveGame);
-                }
                 else
                 {
                     if (resp != null)

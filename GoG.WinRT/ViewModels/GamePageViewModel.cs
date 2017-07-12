@@ -2,6 +2,7 @@
 using GoG.Infrastructure;
 using GoG.Infrastructure.Engine;
 using GoG.Infrastructure.Services.Engine;
+using GoG.WinRT.Services;
 using Microsoft.Practices.Unity;
 using Prism.Commands;
 using Prism.Windows.AppModel;
@@ -33,6 +34,7 @@ namespace GoG.WinRT.ViewModels
 
         #region Properties
 
+        #region ShowingArea
         private bool _showingArea;
         [RestorableState]
         public bool ShowingArea
@@ -40,6 +42,7 @@ namespace GoG.WinRT.ViewModels
             get { return _showingArea; }
             set { SetProperty(ref _showingArea, value); }
         }
+        #endregion ShowingArea
 
         #region MessageText
         private string _messageText;
@@ -52,15 +55,14 @@ namespace GoG.WinRT.ViewModels
                     return;
 
                 _messageText = value;
-                OnPropertyChanged("MessageText");                
+                RaisePropertyChanged();
             }
         }
         #endregion Message
 
         #region ActiveGame
-        private Guid _activeGame;
-        [RestorableState]
-        public Guid ActiveGame
+        private IGame _activeGame;
+        public IGame ActiveGame
         {
             get { return _activeGame; }
             set { _activeGame = value; RaisePropertyChanged(); }
@@ -185,7 +187,7 @@ namespace GoG.WinRT.ViewModels
 
             MessageText = "Getting hint...";
             IsBusy = true;
-            var resp = await DataRepository.HintAsync(ActiveGame, _players[WhoseTurn].Color);
+            var resp = await ActiveGame.HintAsync(_players[WhoseTurn].Color);
             IsBusy = false;
             MessageText = null;
 
@@ -257,7 +259,7 @@ namespace GoG.WinRT.ViewModels
             IsBusy = true;
             var move = new GoMove(MoveType.Pass,
                                   _players[WhoseTurn].Color, null);
-            var resp = await DataRepository.PlayAsync(ActiveGame, move);
+            var resp = await ActiveGame.PlayAsync(move);
             IsBusy = false;
             MessageText = null;
 
@@ -319,7 +321,7 @@ namespace GoG.WinRT.ViewModels
             var move = new GoMove(MoveType.Normal,
                                   _players[WhoseTurn].Color,
                                   position);
-            GoMoveResponse resp = await DataRepository.PlayAsync(ActiveGame, move);
+            GoMoveResponse resp = await ActiveGame.PlayAsync(move);
             IsBusy = false;
             MessageText = null;
 
@@ -377,7 +379,7 @@ namespace GoG.WinRT.ViewModels
             var move = new GoMove(MoveType.Resign,
                                   _players[WhoseTurn].Color,
                                   null);
-            var resp = await DataRepository.PlayAsync(ActiveGame, move);
+            var resp = await ActiveGame.PlayAsync(move);
             IsBusy = false;
             MessageText = null;
 
@@ -429,7 +431,7 @@ namespace GoG.WinRT.ViewModels
 
             MessageText = "Undoing...";
             IsBusy = true;
-            var resp = await DataRepository.UndoAsync(ActiveGame);
+            var resp = await ActiveGame.UndoAsync();
             IsBusy = false;
             MessageText = null;
 
@@ -498,21 +500,23 @@ namespace GoG.WinRT.ViewModels
 
                 base.OnNavigatedTo(e, viewModelState);
 
-                // If a SinglePlayerPageViewModel is passed in, this is a new game
-                // just created by user.  If not, active game from restorable state is used.
-                if (e.Parameter is Guid)
-                {
-                    // Start a single player game using the navigation parameter sent in.
-                    ActiveGame = (Guid)e.Parameter;
-                }
+                SessionStateService.SessionState[]
 
-                if (ActiveGame == Guid.Empty)
-                {
-                    //await DisplayMessage("Error", "Please start a new game.");
-                    GoBackDeferred();
-                }
-                else
-                    LoadGameFromRepoAsync("Syncronizing...");
+                //// If a SinglePlayerPageViewModel is passed in, this is a new game
+                //// just created by user.  If not, active game from restorable state is used.
+                //if (e.Parameter is Guid)
+                //{
+                //    // Start a single player game using the navigation parameter sent in.
+                //    ActiveGame = (Guid)e.Parameter;
+                //}
+
+                //if (ActiveGame == Guid.Empty)
+                //{
+                //    //await DisplayMessage("Error", "Please start a new game.");
+                //    GoBackDeferred();
+                //}
+                //else
+                //    LoadGameFromRepoAsync("Syncronizing...");
             }
             catch (Exception ex)
             {
@@ -555,7 +559,7 @@ namespace GoG.WinRT.ViewModels
         {
             MessageText = _players[WhoseTurn].Name + " is thinking...";
             IsBusy = true;
-            var resp = await DataRepository.GenMoveAsync(ActiveGame, _players[WhoseTurn].Color);
+            var resp = await ActiveGame.GenMoveAsync(ActiveGame, _players[WhoseTurn].Color);
             IsBusy = false;
             MessageText = null;
 
@@ -765,13 +769,13 @@ namespace GoG.WinRT.ViewModels
                 if (AbortOperation)
                     return;
 
-                var exists = await DataRepository.GetGameExists(ActiveGame);
+                var exists = await ActiveGame.GetGameExists(ActiveGame);
                 if (exists.ResultCode == GoResultCode.GameDoesNotExist)
                 {
                     if (AbortOperation)
                         return;
 
-                    resp = await DataRepository.StartAsync(ActiveGame, null);
+                    resp = await ActiveGame.StartAsync(ActiveGame, null);
                     Debug.Assert(resp != null && resp.ResultCode == GoResultCode.Success, "resp != null && resp.ResultCode == GoResultCode.Success");
                 }
             }
@@ -779,7 +783,7 @@ namespace GoG.WinRT.ViewModels
             if (AbortOperation)
                 return;
 
-            resp = await DataRepository.GetGameStateAsync(ActiveGame);
+            resp = await ActiveGame.GetGameStateAsync(ActiveGame);
             IsBusy = false;
             MessageText = null;
 
@@ -796,10 +800,10 @@ namespace GoG.WinRT.ViewModels
                 switch (resp.GameState.Operation)
                 {
                     case GoOperation.GenMove:
-                        WaitAndRetryLoadGameFromServerAsync(5000, "Fuego is thinking...");
+                        await WaitAndRetryLoadGameFromServerAsync(5000, "Fuego is thinking...");
                         break;
                     case GoOperation.Starting:
-                        WaitAndRetryLoadGameFromServerAsync(5000, "Starting game...");
+                        await WaitAndRetryLoadGameFromServerAsync(5000, "Starting game...");
                         break;
                     case GoOperation.Hint:
                     case GoOperation.NormalMove:
