@@ -2,21 +2,26 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Windows.System;
-using Microsoft.Practices.Unity;
 using GoG.Infrastructure.Engine;
 using GoG.Infrastructure.Services.Engine;
 using Prism.Commands;
-using Prism.Mvvm;
 using Prism.Windows.AppModel;
 using GoG.WinRT.Services;
-using System.Threading.Tasks;
+using Prism.Windows.Navigation;
+
+// ReSharper disable RedundantCatchClause
 
 namespace GoG.WinRT.ViewModels
 {
     public class SinglePlayerPageViewModel : PageViewModel
     {
+        #region Data
+        #endregion Data
+
         #region Ctor
-        public SinglePlayerPageViewModel(IUnityContainer c) : base(c)
+        public SinglePlayerPageViewModel(INavigationService navigationService,
+            ISessionStateService sessionStateService, 
+            IGameEngine engine) : base(navigationService, sessionStateService, engine)
         {
             _boardEdgeSize = 9;
             _sizes = new List<Pair>
@@ -57,7 +62,7 @@ namespace GoG.WinRT.ViewModels
                     new Pair("White", (int)GoColor.White)
                 };
             _name = "Homer";
-            //_komi = (decimal)4.5;
+            //_komi = (decimal)6.5;
             
         }
         #endregion Ctor
@@ -65,23 +70,23 @@ namespace GoG.WinRT.ViewModels
         #region Properties
 
         #region ActiveGame
-        private IGame _activeGame;
-        public IGame ActiveGame
+        private Guid _activeGame;
+        [RestorableState]
+        public Guid ActiveGame
         {
-            get { return _activeGame; }
+            get => _activeGame;
             set
             {
                 SetProperty(ref _activeGame, value);
                 RaisePropertyChanged();
+                // ReSharper disable once ExplicitCallerInfoArgument
+                RaisePropertyChanged(nameof(IsActiveGame));
             }
         }
         #endregion ActiveGame
 
         #region IsActiveGame
-        public bool IsActiveGame
-        {
-            get { return _activeGame != null; }
-        }
+        public bool IsActiveGame => _activeGame != Guid.Empty;
         #endregion IsActiveGame
 
         //#region ActiveGameState
@@ -98,15 +103,14 @@ namespace GoG.WinRT.ViewModels
         [Required(ErrorMessage = "Name is required.")]
         public string Name
         {
-            get { return _name; }
+            get => _name;
             set { SetProperty(ref _name, value); PlayCommand.RaiseCanExecuteChanged(); }
         }
 
         private List<Pair> _sizes;
         public List<Pair> Sizes
         {
-            get { return _sizes; }
-            set { SetProperty(ref _sizes, value); }
+            get => _sizes; set => SetProperty(ref _sizes, value);
         }
 
         //#region Seconds
@@ -121,76 +125,42 @@ namespace GoG.WinRT.ViewModels
         private List<Pair> _difficulties;
         public List<Pair> Difficulties
         {
-            get { return _difficulties; }
-            set { SetProperty(ref _difficulties, value); }
+            get => _difficulties; set => SetProperty(ref _difficulties, value);
         }
 
         private int _boardEdgeSize;
         [RestorableState]
         public int BoardEdgeSize
         {
-            get { return _boardEdgeSize; }
-            set { SetProperty(ref _boardEdgeSize, value); }
+            get => _boardEdgeSize; set => SetProperty(ref _boardEdgeSize, value);
         }
 
         private int _difficultyLevel;
         [RestorableState]
         public int DifficultyLevel
         {
-            get { return _difficultyLevel; }
-            set { SetProperty(ref _difficultyLevel, value); }
+            get => _difficultyLevel; set => SetProperty(ref _difficultyLevel, value);
         }
 
         private List<Pair> _colors;
         public List<Pair> Colors
         {
-            get { return _colors; }
-            set { SetProperty(ref _colors, value); }
+            get => _colors; set => SetProperty(ref _colors, value);
         }
 
         private int _color;
         [RestorableState]
         public int Color
         {
-            get { return _color; }
-            set { SetProperty(ref _color, value); }
+            get => _color; set => SetProperty(ref _color, value);
         }
-
-        //private decimal _komi;
-        //[RestorableState]
-        //public decimal Komi
-        //{
-        //    get { return _komi; }
-        //    set { SetProperty(ref _komi, value); }
-        //}
-
-        //#region SecondsPerTurn
-        //private int _secondsPerTurn;
-        //[RestorableState]
-        //public int SecondsPerTurn
-        //{
-        //    get { return _secondsPerTurn; }
-        //    set { _secondsPerTurn = value; OnPropertyChanged("SecondsPerTurn"); }
-        //}
-        //#endregion SecondsPerTurn
-
+        
         #endregion Properties
 
         #region Commands
-
-        #region LaunchUrlCommand
-        DelegateCommand<string> _launchUrlCommand;
-        public DelegateCommand<string> LaunchUrlCommand => _launchUrlCommand ?? (_launchUrlCommand = new DelegateCommand<string>(ExecuteLaunchUrl, CanLaunchUrl));
-        public bool CanLaunchUrl(string url) => true;
-        public void ExecuteLaunchUrl(string url)
-        {
-            // Launch the URI
-            Launcher.LaunchUriAsync(new Uri(url));
-        }
-        #endregion LaunchUrlCommand
         
         #region PlayCommand
-        DelegateCommand _playCommand;
+        private DelegateCommand _playCommand;
         public DelegateCommand PlayCommand => _playCommand ?? (_playCommand = new DelegateCommand(ExecutePlay, CanPlay));
         public bool CanPlay() => !string.IsNullOrWhiteSpace(Name);
         public void ExecutePlay()
@@ -201,18 +171,15 @@ namespace GoG.WinRT.ViewModels
         #endregion PlayCommand
        
         #region ResumeCommand
-        DelegateCommand _resumeCommand;
-        public DelegateCommand ResumeCommand
-        {
-            get { return _resumeCommand ?? (_resumeCommand = new DelegateCommand(ExecuteResume, CanResume)); }
-        }
+        private DelegateCommand _resumeCommand;
+        public DelegateCommand ResumeCommand => _resumeCommand ?? (_resumeCommand = new DelegateCommand(ExecuteResume, CanResume));
         public bool CanResume()
         {
             return true;
         }
         public void ExecuteResume()
         {
-            NavService.Navigate("Game", ActiveGame);
+            NavigationService.Navigate("Game", ActiveGame);
         }
         #endregion ResumeCommand
 
@@ -228,8 +195,8 @@ namespace GoG.WinRT.ViewModels
         {
             try
             {
-                bool success = false;
-                GoGameStateResponse resp = null;
+                var success = false;
+                GoResponse resp = null;
 
                 for (int tries = 0; !AbortOperation && !success && tries < 5; tries++)
                 {
@@ -259,9 +226,8 @@ namespace GoG.WinRT.ViewModels
                         p1.Name = "Fuego";
                         p1.PlayerType = PlayerType.AI;
                         p1.Level = DifficultyLevel;
-
                     }
-                    var tmpState = new GoGameState(
+                    var tmpState = new GoGame(
                         (byte)BoardEdgeSize,
                         p1, p2,
                         GoGameStatus.Active,
@@ -270,28 +236,34 @@ namespace GoG.WinRT.ViewModels
                         "",
                         new List<GoMoveHistoryItem>(), 
                         0);
-                    ActiveGame = Container.Resolve<FuegoGame>();
-                    await ActiveGame.StartAsync(tmpState);
+                    var tmpGuid = Guid.NewGuid();
+                    resp = await GameEngine.CreateOrSyncToGameAsync(tmpGuid, tmpState);
                     BusyMessage = null;
                     IsBusy = false;
 
-                    success = true;
+                    if (resp.ResultCode == GoResultCode.Success)
+                    {
+                        success = true;
+                        ActiveGame = tmpGuid;
+                    }
                 }
 
                 if (AbortOperation)
                     return;
 
                 if (success)
-                    NavService.Navigate("Game", ActiveGame);
+                    NavigationService.Navigate("Game", ActiveGame);
                 else
                 {
                     if (resp != null)
                         await DisplayErrorCode(resp.ResultCode);
+                    else
+                        await DisplayErrorCode(GoResultCode.InternalError);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-
+                throw;
             }
             finally
             {

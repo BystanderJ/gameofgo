@@ -1,7 +1,7 @@
-﻿using Microsoft.Practices.Unity;
-using Prism.Windows.Navigation;
+﻿using Prism.Windows.Navigation;
 using Prism.Commands;
 using System.Collections.Generic;
+using GoG.WinRT.Services;
 using Prism.Windows.AppModel;
 
 namespace GoG.WinRT.ViewModels
@@ -9,17 +9,20 @@ namespace GoG.WinRT.ViewModels
     public class PageViewModel : BaseViewModel
     {
         #region Data
-        protected readonly IUnityContainer Container;
-        protected readonly INavigationService NavService;
+        protected readonly INavigationService NavigationService;
         protected readonly ISessionStateService SessionStateService;
+        protected readonly IGameEngine GameEngine;
+        protected bool AbortOperation;
         #endregion Data
 
         #region Ctor
-        public PageViewModel(IUnityContainer container)
+        public PageViewModel(INavigationService navigationService,
+            ISessionStateService sessionStateService,
+            IGameEngine gameEngine)
         {
-            Container = container;
-            NavService = container.Resolve<INavigationService>();
-            SessionStateService = container.Resolve<ISessionStateService>();
+            NavigationService = navigationService;
+            SessionStateService = sessionStateService;
+            GameEngine = gameEngine;
         }
 
         #endregion Ctor
@@ -34,11 +37,11 @@ namespace GoG.WinRT.ViewModels
         }
         private bool BaseCanGoBack()
         {
-            return NavService.CanGoBack() && CanGoBack();
+            return NavigationService.CanGoBack() && CanGoBack();
         }
         private void ExecuteGoBack()
         {
-            NavService.GoBack();
+            NavigationService.GoBack();
         }
         #endregion GoBackCommand
 
@@ -48,8 +51,13 @@ namespace GoG.WinRT.ViewModels
         public override void OnNavigatingFrom(NavigatingFromEventArgs e, Dictionary<string, object> viewModelState, bool suspending)
         {
             base.OnNavigatingFrom(e, viewModelState, suspending);
-
             AbortOperation = true;
+        }
+
+        public override void OnNavigatedTo(NavigatedToEventArgs e, Dictionary<string, object> viewModelState)
+        {
+            AbortOperation = false;
+            base.OnNavigatedTo(e, viewModelState);
         }
 
         /// <summary>
@@ -63,20 +71,11 @@ namespace GoG.WinRT.ViewModels
         #endregion Virtuals
 
         #region Properties
-        #region AbortOperation
-        private bool _abortOperation;
-        public bool AbortOperation
-        {
-            get { return _abortOperation; }
-            set { _abortOperation = value; OnPropertyChanged("AbortOperation"); }
-        }
-        #endregion AbortOperation
-
+        
         private bool _isBusy;
         public bool IsBusy
         {
-            get { return _isBusy; }
-            set
+            get => _isBusy; set
             {
                 if (_isBusy != value)
                 {
@@ -95,8 +94,7 @@ namespace GoG.WinRT.ViewModels
         private string _busyMessage;
         public string BusyMessage
         {
-            get { return _busyMessage; }
-            set { SetProperty(ref _busyMessage, value); }
+            get => _busyMessage; set => SetProperty(ref _busyMessage, value);
         }
         #endregion Properties
 
@@ -108,7 +106,7 @@ namespace GoG.WinRT.ViewModels
         {
             // Note: Calling NavService.GoBack() in context of an existing navigation action causes
             // an exception.  Hence the need for this helper method.
-            RunOnUIThread(() => NavService.GoBack());
+            RunOnUIThread(() => NavigationService.GoBack());
         }
         #endregion Helpers
     }

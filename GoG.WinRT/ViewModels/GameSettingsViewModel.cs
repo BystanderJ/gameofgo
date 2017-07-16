@@ -10,8 +10,7 @@ namespace GoG.WinRT.ViewModels
         /// </summary>
         public bool IsLastMoveIndicatorShowing
         {
-            get { return _isLastMoveIndicatorShowing; }
-            set { SetProperty(ref _isLastMoveIndicatorShowing, value); }
+            get => _isLastMoveIndicatorShowing; set => SetProperty(ref _isLastMoveIndicatorShowing, value);
         }
 
         private bool _areRecentCapturesShowing;
@@ -20,8 +19,7 @@ namespace GoG.WinRT.ViewModels
         /// </summary>
         public bool AreRecentCapturesShowing
         {
-            get { return _areRecentCapturesShowing; }
-            set { SetProperty(ref _areRecentCapturesShowing, value); }
+            get => _areRecentCapturesShowing; set => SetProperty(ref _areRecentCapturesShowing, value);
         }
     }
 }

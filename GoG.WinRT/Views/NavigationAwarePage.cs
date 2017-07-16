@@ -64,10 +64,7 @@ namespace GoG.WinRT.Views
                 return _backCommand;
             }
 
-            set
-            {
-                _backCommand = value;
-            }
+            set => _backCommand = value;
         }
 
         /// <summary>

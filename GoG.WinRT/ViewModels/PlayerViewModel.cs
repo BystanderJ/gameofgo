@@ -18,44 +18,38 @@ namespace GoG.WinRT.ViewModels
         private int _moveCount;
         public int MoveCount
         {
-            get { return _moveCount; }
-            set { _moveCount = value; OnPropertyChanged("MoveCount"); }
+            get => _moveCount; set { _moveCount = value; OnPropertyChanged("MoveCount"); }
         }
         #endregion MoveCount
 
         private string _name;
         public string Name
         {
-            get { return _name; }
-            set { SetProperty(ref _name, value); }
+            get => _name; set => SetProperty(ref _name, value);
         }
 
         private PlayerType _playerType;
         public PlayerType PlayerType
         {
-            get { return _playerType; }
-            set { SetProperty(ref _playerType, value); }
+            get => _playerType; set => SetProperty(ref _playerType, value);
         }
 
         private int _level;
         public int Level
         {
-            get { return _level; }
-            set { SetProperty(ref _level, value); }
+            get => _level; set => SetProperty(ref _level, value);
         }
 
         private GoColor _color;
         public GoColor Color
         {
-            get { return _color; }
-            set { SetProperty(ref _color, value); }
+            get => _color; set => SetProperty(ref _color, value);
         }
 
         private decimal _komi;
         public decimal Komi
         {
-            get { return _komi; }
-            set
+            get => _komi; set
             {
                 if (SetProperty(ref _komi, value))
                     RaisePropertyChanged(nameof(Score));
@@ -65,8 +59,7 @@ namespace GoG.WinRT.ViewModels
         private int _area;
         public int Area
         {
-            get { return _area; }
-            set
+            get => _area; set
             {
                 if (SetProperty(ref _area, value))
                     RaisePropertyChanged(nameof(Score));
@@ -74,16 +67,12 @@ namespace GoG.WinRT.ViewModels
         }
 
         private decimal _score;
-        public decimal Score
-        {
-            get { return _komi + _prisoners + _area; }
-        }
+        public decimal Score => _komi + _prisoners + _area;
 
         private int _prisoners = 0;
         public int Prisoners
         {
-            get { return _prisoners; }
-            set
+            get => _prisoners; set
             {
                 if (SetProperty(ref _prisoners, value))
                     RaisePropertyChanged(nameof(Score));

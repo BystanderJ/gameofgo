@@ -9,13 +9,18 @@ using GoG.Infrastructure.Engine;
 using GoG.Infrastructure.Services.Engine;
 using Prism.Windows.AppModel;
 
+// ReSharper disable RedundantCatchClause
+
 namespace GoG.WinRT.Services
 {
-    public class FuegoGame : IGame
+    /// <summary>
+    /// A single player game engine.
+    /// </summary>
+    public class FuegoGameEngine : IGameEngine
     {
         #region Data
 
-        const string GameStateKey = "Repo_ActiveGameState";
+        const string GamesStateKey = "GameEngineState";
 
         readonly ISessionStateService _sessionStateService;
 
@@ -23,154 +28,76 @@ namespace GoG.WinRT.Services
         // hangs, so every time we call methods on it we must create a thread.
         private FuegoInstance _fuego;
 
-        //private GoOperation _currentOperation = GoOperation.Starting;
+        // The current game.  If its Id does not match the desired state, must coerse the
+        // _fuego instance to the desired game then set _state to the new game.
+        private GoGame _state;
 
-        // If the State is null, means Start() has not been called, which could be because this FuegoInstance 
-        // has never been used, or once belonged to another gameid and was repurposed.
-        private GoGameState _state;
+        // The other games we might need to switch to.  The key is the GoGame.Id.
+        private readonly Dictionary<Guid, GoGame> _states = new Dictionary<Guid, GoGame>();
 
         #endregion Data
 
         #region Ctor
-        public FuegoGame(ISessionStateService sessionStateService)
+        public FuegoGameEngine(ISessionStateService sessionStateService)
         {
             _sessionStateService = sessionStateService;
 
-            if (sessionStateService.SessionState.ContainsKey(GameStateKey))
+            if (sessionStateService.SessionState.ContainsKey(GamesStateKey))
                 LoadState();
         }
         #endregion Ctor
 
         #region Fuego Implementation
 
-        public async Task<GoGameStateResponse> GetGameStateAsync()
+        public async Task<GoResponse> CreateOrSyncToGameAsync(Guid id, GoGame state)
         {
             try
             {
-                return new GoGameStateResponse(GoResultCode.Success, _state);
-            }
-            catch
-            {
-                // Any kind of error is assumed to be internet connectivity.
-                return new GoGameStateResponse(GoResultCode.CommunicationError, null);
-            }
-        }
+                Debug.Assert(state != null, "state != null");
 
-        /// <summary>
-        /// Starts the fuego engine and resets its game state to the given state.
-        /// </summary>
-        /// <param name="gameid"></param>
-        /// <param name="state"></param>
-        /// <returns></returns>
-        public async Task<GoGameStateResponse> StartAsync(GoGameState state)
-        {
-            GoGameStateResponse rval;
-            try
-            {
-                // Either we're starting a new game, or a game already exist and we're just
-                // setting up fuego.
-                Debug.Assert(state != null || _state != null, "state != null || _state != null");
+                if (!_states.ContainsKey(id))
+                    _states.Add(id, state);
+                
+                // The following method sets _state and coerses the FuegoInstance
+                // to match that state through a series of GTP commands.
+                await EnsureFuegoStartedAndMatchingGame(id);
 
-                _fuego = new FuegoInstance();
-
-                await Task.Factory.StartNew(() => StartEngine(state));
-
-                rval = new GoGameStateResponse(GoResultCode.Success, state);
+                return new GoResponse(GoResultCode.Success);
             }
             catch (GoEngineException gex)
             {
-                rval = new GoGameStateResponse(gex.Code, null);
+                return new GoGameStateResponse(gex.Code, null);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                rval = new GoGameStateResponse(GoResultCode.InternalError, null);
+                return new GoGameStateResponse(GoResultCode.InternalError, null);
             }
-
-            return rval;
         }
 
-        private async Task StartEngine(GoGameState state)
+        public Task<GoResponse> DeleteGameAsync(Guid id)
         {
-            if (state != null)
-                _state = state;
-
-            _state.Operation = GoOperation.Starting;
-
-            SaveState();
-
-            _fuego.StartGame(_state.Size);
-            
-            var level = _state.Player1.PlayerType == PlayerType.AI
-                ? _state.Player1.Level
-                : _state.Player2.Level;
-
-            // Set up parameters and clear board.
-            //await WriteCommand("uct_max_memory", (1024 * 1024 * 250).ToString());
-
-            if (level < 3)
-            {
-                ParseResponse(WriteCommand("uct_param_player max_games",
-                    ((level + 1)*5).ToString(CultureInfo.InvariantCulture)));
-            }
-            else if (level < 6)
-            {
-                ParseResponse(WriteCommand("uct_param_player max_games",
-                    (level*100).ToString(CultureInfo.InvariantCulture)));
-            }
-            else if (level < 9)
-            {
-                ParseResponse(WriteCommand("uct_param_player max_games",
-                    (level*1000).ToString(CultureInfo.InvariantCulture)));
-            }
-            else //if (level < 9)
-            {
-                ParseResponse(WriteCommand("uct_param_player max_games",
-                    int.MaxValue.ToString(CultureInfo.InvariantCulture)));
-            }
-
-            ParseResponse(WriteCommand("komi", state.Player2.Komi.ToString()));
-            ParseResponse(WriteCommand("clear_board"));
-            ParseResponse(WriteCommand("go_param_rules", "capture_dead 1"));
-
-            // Set up board with some pre-existing moves.
-            if (_state.GoMoveHistory.Count > 0)
-            {
-                // Must actually play every move back because otherwise undo operations
-                // won't work.
-                foreach (var m in _state.GoMoveHistory)
-                {
-                    string position;
-                    switch (m.Move.MoveType)
-                    {
-                        case MoveType.Normal:
-                            position = m.Move.Position;
-                            break;
-                        case MoveType.Pass:
-                            position = "PASS";
-                            break;
-                        default:
-                            throw new ArgumentException("Unrecognized move type: " + m.Move.MoveType);
-                    }
-
-                    ParseResponse(WriteCommand("play",
-                        (m.Move.Color == GoColor.Black ? "black" : "white") + ' ' + position));
-                }
-            }
-            
-            _state.Operation = GoOperation.Idle;
-            SaveState();
+            if (_states.ContainsKey(id))
+                _states.Remove(id);
+            return Task.FromResult(new GoResponse(GoResultCode.Success));
         }
 
-        public async Task<GoMoveResponse> GenMoveAsync(GoColor color)
+        public Task<GoGameStateResponse> GetGameStateAsync(Guid id)
+        {
+            if (!_states.TryGetValue(id, out var state))
+                return Task.FromResult(new GoGameStateResponse(GoResultCode.GameDoesNotExist, null));
+            return Task.FromResult(new GoGameStateResponse(GoResultCode.Success, state));
+        }
+
+        public async Task<GoMoveResponse> GenMoveAsync(Guid id, GoColor color)
         {
             GoMoveResponse rval = null;
 
             try
             {
-                await Task.Factory.StartNew(
-                        () =>
+                await Task.Run(
+                        async () =>
                         {
-                            EnsureFuegoStarted().Wait();
+                            await EnsureFuegoStartedAndMatchingGame(id);
 
                             _state.Operation = GoOperation.GenMove;
                             SaveState();
@@ -201,7 +128,7 @@ namespace GoG.WinRT.Services
                                     newMove = new GoMove(MoveType.Normal, color, result.Msg);
                                     break;
                             }
-                                
+
                             // Add to move history and record new game state in database so user can 
                             // see what happened.
                             var moveResult = AddMoveAndUpdateState(newMove);
@@ -216,101 +143,93 @@ namespace GoG.WinRT.Services
             {
                 rval = new GoMoveResponse(gex.Code, null, null);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 rval = new GoMoveResponse(GoResultCode.InternalError, null, null);
             }
-            
+
             Debug.Assert(rval != null, "rval != null");
 
             return rval;
         }
 
-        public async Task<GoMoveResponse> PlayAsync(GoMove move)
+        public async Task<GoMoveResponse> PlayAsync(Guid id, GoMove move)
         {
-            GoMoveResponse rval;
+            GoMoveResponse rval = null;
 
-            GoMoveResult moveResult = null;
+            GoMoveResult moveResult;
             try
             {
-                await EnsureFuegoStarted();
-
-                if (move.MoveType == MoveType.Resign)
-                {
-                    // Fuego doesn't support the command to resign.
-                    _state.Operation = GoOperation.Resign;
-                    SaveState();
-
-                    moveResult = AddMoveAndUpdateState(move);
-                }
-                else
-                {
-                    string position;
-                    switch (move.MoveType)
+                await Task.Run(
+                    async () =>
                     {
-                        case MoveType.Normal:
-                            position = move.Position;
-                            _state.Operation = GoOperation.NormalMove;
-                            break;
-                        case MoveType.Pass:
-                            position = "PASS";
-                            _state.Operation = GoOperation.Pass;
-                            break;
-                        default:
-                            throw new ArgumentException("Unrecognized move type: " + move.MoveType);
-                    }
+                        await EnsureFuegoStartedAndMatchingGame(id);
 
-                    await Task.Factory.StartNew(
-                        () =>
+                        if (move.MoveType == MoveType.Resign)
                         {
+                            // Fuego doesn't support the command to resign.
+                            _state.Operation = GoOperation.Resign;
+                            SaveState();
+
+                            moveResult = AddMoveAndUpdateState(move);
+                        }
+                        else
+                        {
+                            string position;
+                            switch (move.MoveType)
+                            {
+                                case MoveType.Normal:
+                                    position = move.Position;
+                                    _state.Operation = GoOperation.NormalMove;
+                                    break;
+                                case MoveType.Pass:
+                                    position = "PASS";
+                                    _state.Operation = GoOperation.Pass;
+                                    break;
+                                default:
+                                    throw new ArgumentException("Unrecognized move type: " + move.MoveType);
+                            }
+
                             SaveState();
 
                             // This throws a GoEngineException on any failure.
-                            ParseResponse(WriteCommand("play", (move.Color == GoColor.Black ? "black" : "white") + ' ' + position));
+                            ParseResponse(WriteCommand("play",
+                                    (move.Color == GoColor.Black ? "black" : "white") + ' ' + position));
 
                             // Add to move history and persist new game state so user can 
                             // see what happened.
                             moveResult = AddMoveAndUpdateState(move);
                             _state.Operation = GoOperation.Idle;
                             SaveState();
-                        });
-                }
 
-                Debug.Assert(moveResult != null, "moveResult != null");
-                rval = new GoMoveResponse(GoResultCode.Success, move, moveResult);
+                        }
+
+                        Debug.Assert(moveResult != null, "moveResult != null");
+                        rval = new GoMoveResponse(GoResultCode.Success, move, moveResult);
+                    });
             }
             catch (GoEngineException gex)
             {
                 rval = new GoMoveResponse(gex.Code, null, null);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 rval = new GoMoveResponse(GoResultCode.InternalError, null, null);
             }
+            Debug.Assert(rval != null, "rval != null");
             return rval;
         }
 
-        private async Task EnsureFuegoStarted()
-        {
-            if (_fuego == null)
-            {
-                await Task.Factory.StartNew(
-                    () =>
-                    {
-                        StartAsync(_state).Wait();
-                    });
-            }
-        }
 
-        public async Task<GoHintResponse> HintAsync(GoColor color)
+        public async Task<GoHintResponse> HintAsync(Guid id, GoColor color)
         {
             GoHintResponse rval = null;
             try
             {
-                await Task.Factory.StartNew(
-                    () =>
+                await Task.Run(
+                    async () =>
                     {
-                        EnsureFuegoStarted().Wait();
+                        await EnsureFuegoStartedAndMatchingGame(id);
 
                         _state.Operation = GoOperation.Hint;
                         SaveState();
@@ -341,7 +260,7 @@ namespace GoG.WinRT.Services
             {
                 rval = new GoHintResponse(gex.Code, null);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 rval = new GoHintResponse(GoResultCode.InternalError, null);
             }
@@ -350,15 +269,15 @@ namespace GoG.WinRT.Services
             return rval;
         }
 
-        public async Task<GoGameStateResponse> UndoAsync()
+        public async Task<GoGameStateResponse> UndoAsync(Guid id)
         {
             GoGameStateResponse rval = null;
             try
             {
-                await Task.Factory.StartNew(
-                    () =>
+                await Task.Run(
+                    async () =>
                     {
-                        EnsureFuegoStarted().Wait();
+                        await EnsureFuegoStartedAndMatchingGame(id);
 
                         _state.Operation = GoOperation.Undo;
                         SaveState();
@@ -409,7 +328,7 @@ namespace GoG.WinRT.Services
                             ParseResponse(WriteCommand("gg-undo", undo.ToString(CultureInfo.InvariantCulture)));
                         }
 
-                         UndoMovesInState(undo);
+                        UndoMoves(undo);
 
                         _state.Operation = GoOperation.Idle;
                         SaveState();
@@ -421,7 +340,7 @@ namespace GoG.WinRT.Services
             {
                 rval = new GoGameStateResponse(gex.Code, null);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 rval = new GoGameStateResponse(GoResultCode.InternalError, null);
             }
@@ -434,7 +353,7 @@ namespace GoG.WinRT.Services
 
         #region Private Helpers
 
-        private void UndoMovesInState(int moves)
+        private void UndoMoves(int moves)
         {
             try
             {
@@ -446,15 +365,15 @@ namespace GoG.WinRT.Services
                     _state.GoMoveHistory.RemoveAt(_state.GoMoveHistory.Count - 1);
 
                 // Change turn if an odd number of moves were undone.
-                if (moves%2 == 1)
+                if (moves % 2 == 1)
                     _state.WhoseTurn = _state.WhoseTurn == GoColor.Black ? GoColor.White : GoColor.Black;
 
                 _state.WinMargin = 0;
                 _state.Status = GoGameStatus.Active;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                
+                throw;
             }
         }
 
@@ -475,19 +394,19 @@ namespace GoG.WinRT.Services
         {
             public MyResponse()
             {
-                
+
             }
 
-            public MyResponse(string code, IEnumerable<string> lines)
-            {
-                Code = code;
-                Lines = new List<string>(lines);
-            }
+            //public MyResponse(string code, IEnumerable<string> lines)
+            //{
+            //    Code = code;
+            //    Lines = new List<string>(lines);
+            //}
 
             public MyResponse(string code, string msg)
             {
                 Code = code;
-                Lines = new List<string> {msg};
+                Lines = new List<string> { msg };
             }
 
             public string Code { get; set; }
@@ -555,7 +474,7 @@ namespace GoG.WinRT.Services
                 code = GoResultCode.CannotScore;
 
             var result = ParseResponse(WriteCommand("showboard"));
-            
+
             if (code == null)
             {
                 result.Lines.Add("Error " + errorId + ": " + errorMessage);
@@ -585,13 +504,9 @@ namespace GoG.WinRT.Services
 
         private void SaveState()
         {
-            // Note: this is temporary until can figure out why (de)serialization
-            // fails with .Net Native compilation.
-            return;
-
             try
             {
-                _sessionStateService.SessionState[GameStateKey] = _state;
+                _sessionStateService.SessionState[GamesStateKey] = _state;
 
                 //var str = JsonConvert.SerializeObject(_state);
 
@@ -599,24 +514,20 @@ namespace GoG.WinRT.Services
                 //var file = await storageFolder.CreateFileAsync(StateFilename, CreationCollisionOption.ReplaceExisting);
                 //await FileIO.WriteTextAsync(file, str);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                
+                throw;
             }
-            
+
         }
 
         private void LoadState()
         {
-            // Note: this is temporary until can figure out why (de)serialization
-            // fails with .Net Native compilation.
-            return;
-
             try
             {
-                if (_sessionStateService.SessionState.ContainsKey(GameStateKey))
+                if (_sessionStateService.SessionState.ContainsKey(GamesStateKey))
                 {
-                    _state = (GoGameState) _sessionStateService.SessionState[GameStateKey];
+                    _state = (GoGame)_sessionStateService.SessionState[GamesStateKey];
                 }
 
                 //var storageFolder = ApplicationData.Current.LocalFolder;
@@ -625,11 +536,11 @@ namespace GoG.WinRT.Services
 
                 //_state = JsonConvert.DeserializeObject<GoGameState>(str);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                
+                throw;
             }
-            
+
         }
 
         private GoMoveResult AddMoveAndUpdateState(GoMove move)
@@ -677,28 +588,28 @@ namespace GoG.WinRT.Services
                 rval.Status = _state.Status;
                 rval.WinMargin = _state.WinMargin;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
-            
+
             return rval;
         }
 
-        private async Task UpdateStateFromExeAndSaveState()
-        {
-#if DEBUG
-            var result = ParseResponse(WriteCommand("showboard"));
-#endif
+//        private async Task UpdateStateFromExeAndSaveState()
+//        {
+//#if DEBUG
+//            var result = ParseResponse(WriteCommand("showboard"));
+//#endif
 
-            GetStones(); // Gets the new _state.BlackPositions and _state.WhitePositions.
+//            GetStones(); // Gets the new _state.BlackPositions and _state.WhitePositions.
 
-            // Determine whose turn.
-            _state.WhoseTurn = _state.WhoseTurn == GoColor.Black ? GoColor.White : GoColor.Black;
+//            // Determine whose turn.
+//            _state.WhoseTurn = _state.WhoseTurn == GoColor.Black ? GoColor.White : GoColor.Black;
 
-            // Save to database.
-            SaveState();
-        }
+//            // Save to database.
+//            SaveState();
+//        }
 
         /// <summary>
         /// Call after each move to save state.
@@ -714,10 +625,100 @@ namespace GoG.WinRT.Services
 
         private string CalculateGameResult()
         {
-            var result = ParseResponse(WriteCommand("final_score", null));
+            var result = ParseResponse(WriteCommand("final_score"));
 
             return result.Msg;
         }
+
+        private async Task EnsureFuegoStartedAndMatchingGame(Guid id)
+        {
+            // We don't want callers to handle GameDoesNotExist errors.
+            _states.TryGetValue(id, out var state);
+            Debug.Assert(state != null, $"Don't call {nameof(EnsureFuegoStartedAndMatchingGame)} with the ID of a game that does not exist!");
+
+            if (_fuego == null)
+            {
+                _state = state;
+                _fuego = new FuegoInstance();
+                await Task.Run(() => RestartEngine(state));
+            }
+            else
+            {
+                if (_state != state)
+                {
+                    _state = state;
+                    await Task.Run(() => RestartEngine(state));
+                }
+            }
+        }
+
+        // Call only from EnsureFuegoStartedAndMatchingGame() because that method
+        // ensures the _states is updated.
+        private void RestartEngine(GoGame state)
+        {
+            _fuego.StartGame(_state.Size);
+
+            var level = _state.Player1.PlayerType == PlayerType.AI
+                ? _state.Player1.Level
+                : _state.Player2.Level;
+
+            // Set up parameters and clear board.
+            //await WriteCommand("uct_max_memory", (1024 * 1024 * 250).ToString());
+
+            if (level < 3)
+            {
+                ParseResponse(WriteCommand("uct_param_player max_games",
+                    ((level + 1) * 5).ToString(CultureInfo.InvariantCulture)));
+            }
+            else if (level < 6)
+            {
+                ParseResponse(WriteCommand("uct_param_player max_games",
+                    (level * 100).ToString(CultureInfo.InvariantCulture)));
+            }
+            else if (level < 9)
+            {
+                ParseResponse(WriteCommand("uct_param_player max_games",
+                    (level * 1000).ToString(CultureInfo.InvariantCulture)));
+            }
+            else
+            {
+                ParseResponse(WriteCommand("uct_param_player max_games",
+                    int.MaxValue.ToString(CultureInfo.InvariantCulture)));
+            }
+
+            ParseResponse(WriteCommand("komi", state.Player2.Komi.ToString(CultureInfo.InvariantCulture)));
+            ParseResponse(WriteCommand("clear_board"));
+            ParseResponse(WriteCommand("go_param_rules", "capture_dead 1"));
+
+            // Set up board with some pre-existing moves.
+            if (_state.GoMoveHistory.Count > 0)
+            {
+                // Must actually play every move back because otherwise undo operations
+                // won't work.
+                foreach (var m in _state.GoMoveHistory)
+                {
+                    string position;
+                    switch (m.Move.MoveType)
+                    {
+                        case MoveType.Normal:
+                            position = m.Move.Position;
+                            break;
+                        case MoveType.Pass:
+                            position = "PASS";
+                            break;
+                        default:
+                            throw new ArgumentException("Unrecognized move type: " + m.Move.MoveType);
+                    }
+
+                    ParseResponse(WriteCommand("play",
+                        (m.Move.Color == GoColor.Black ? "black" : "white") + ' ' + position));
+                }
+            }
+
+            _state = state;
+            SaveState();
+        }
+
 
         #endregion Private Helpers
     }

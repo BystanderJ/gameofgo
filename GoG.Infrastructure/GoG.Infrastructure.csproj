@@ -87,7 +87,7 @@
     <Compile Include="EngineHelpers.cs" />
     <Compile Include="Engine\Enums.cs" />
     <Compile Include="Engine\GoColor.cs" />
-    <Compile Include="Engine\GoGameState.cs" />
+    <Compile Include="Engine\GoGame.cs" />
     <Compile Include="Engine\GoMove.cs" />
     <Compile Include="Engine\GoMoveHistoryItem.cs" />
     <Compile Include="Engine\GoMoveResult.cs" />
@@ -102,9 +102,15 @@
     <Compile Include="Services\Engine\GoResponse.cs" />
     <Compile Include="Services\Engine\GoScoreResponse.cs" />
     <Compile Include="StringExtensions.cs" />
+    <Compile Include="TaskExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="project.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Runtime.Serialization.Primitives">
+      <HintPath>..\..\..\Users\Chris Bordeman\.nuget\packages\System.Runtime.Serialization.Primitives\4.1.1\ref\netcore50\System.Runtime.Serialization.Primitives.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

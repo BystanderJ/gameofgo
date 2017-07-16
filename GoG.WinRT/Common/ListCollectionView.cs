@@ -88,8 +88,7 @@ namespace GoG.WinRT.Common
         /// </summary>
         public object Source
         {
-            get { return _source; }
-            set
+            get => _source; set
             {
                 if (_source != value)
                 {
@@ -502,8 +501,7 @@ namespace GoG.WinRT.Common
         public bool CanFilter { get { return true; } }
         public Predicate<object> Filter
         {
-            get { return _filter; }
-            set
+            get => _filter; set
             {
                 if (_filter != value)
                 {
@@ -547,8 +545,7 @@ namespace GoG.WinRT.Common
         /// </summary>
         public object CurrentItem
         {
-            get { return _index > -1 && _index < _view.Count ? _view[_index] : null; }
-            set { MoveCurrentTo(value); }
+            get => _index > -1 && _index < _view.Count ? _view[_index] : null; set => MoveCurrentTo(value);
         }
         /// <summary>
         /// Gets the ordinal position of the current item in the view.
@@ -615,8 +612,7 @@ namespace GoG.WinRT.Common
         }
         public object this[int index]
         {
-            get { return _view[index]; }
-            set { _view[index] = value; }
+            get => _view[index]; set => _view[index] = value;
         }
         public bool Contains(object item) { return _view.Contains(item); }
         public void CopyTo(object[] array, int arrayIndex) { _view.CopyTo(array, arrayIndex); }

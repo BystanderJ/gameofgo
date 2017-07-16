@@ -102,8 +102,7 @@ namespace Prism.Commands
         /// <value><see langword="true" /> if the object is active; otherwise <see langword="false" />.</value>
         public bool IsActive
         {
-            get { return _isActive; }
-            set
+            get => _isActive; set
             {
                 if (_isActive != value)
                 {

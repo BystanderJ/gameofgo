@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace GoG.Infrastructure.Engine
@@ -7,18 +6,20 @@ namespace GoG.Infrastructure.Engine
     /// <summary>
     /// Game state contains information about the game and previous moves.
     /// </summary>
-    
-    public class GoGameState
+    [DataContract]
+    public class GoGame
     {
-        public GoGameState()
-        {
-        }
+        /// <summary>
+        /// Serialization ctor only.
+        /// </summary>
+        public GoGame() { }
 
-        public GoGameState(
+        public GoGame(
             byte size,
             GoPlayer player1, GoPlayer player2,
             GoGameStatus status,
-            GoColor whoseTurn, string blackPositions, string whitePositions,
+            GoColor whoseTurn, 
+            string blackPositions, string whitePositions,
             List<GoMoveHistoryItem> goMoveHistory, decimal winMargin)
         {
             Size = size;
@@ -31,22 +32,22 @@ namespace GoG.Infrastructure.Engine
             GoMoveHistory = goMoveHistory;
             WinMargin = winMargin;
         }
-                
-        
+
+        [DataMember]
         public GoGameStatus Status { get; set; }
-        
+        [DataMember]
         public decimal WinMargin { get; set; }
-        
+        [DataMember]
         public GoPlayer Player1 { get; set; }
-        
+        [DataMember]
         public GoPlayer Player2 { get; set; }
-        
+        [DataMember]
         public GoOperation Operation { get; set; }
-        
+
         /// <summary>
         /// Board edge size, usually 9x9, 13x13, or 19x19.
         /// </summary>
-        
+        [DataMember]
         public byte Size { get; set; }
 
         ///// <summary>
@@ -57,22 +58,21 @@ namespace GoG.Infrastructure.Engine
         /// <summary>
         /// Whose turn is it?  Black or White?
         /// </summary>
-        
+        [DataMember]
         public GoColor WhoseTurn { get; set; }
 
         /// <summary>
         /// Position of all the black stones.
         /// </summary>
-        
+        [DataMember]
         public string BlackPositions { get; set; }
 
         /// <summary>
         /// Position of all the white stones.
         /// </summary>
-        
+        [DataMember]
         public string WhitePositions { get; set; }
-
-        
+        [DataMember]
         public List<GoMoveHistoryItem> GoMoveHistory { get; set; }
     }
 }

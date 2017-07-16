@@ -89,15 +89,9 @@ namespace GoG.WinRT.Common
         /// </summary>
         protected IObservableMap<String, Object> DefaultViewModel
         {
-            get
-            {
-                return GetValue(DefaultViewModelProperty) as IObservableMap<String, Object>;
-            }
+            get => GetValue(DefaultViewModelProperty) as IObservableMap<String, Object>;
 
-            set
-            {
-                SetValue(DefaultViewModelProperty, value);
-            }
+            set => SetValue(DefaultViewModelProperty, value);
         }
 
         #region Navigation support
@@ -459,10 +453,7 @@ namespace GoG.WinRT.Common
 
             public V this[K key]
             {
-                get
-                {
-                    return _dictionary[key];
-                }
+                get => _dictionary[key];
                 set
                 {
                     _dictionary[key] = value;

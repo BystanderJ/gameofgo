@@ -16,8 +16,7 @@ namespace Prism.Windows.Navigation
         /// </summary>
         public bool Cancel
         {
-            get { return _eventArgs != null ? _eventArgs.Cancel : false; }
-            set
+            get => _eventArgs != null ? _eventArgs.Cancel : false; set
             {
                 if (_eventArgs != null)
                     _eventArgs.Cancel = value;

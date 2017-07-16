@@ -33,8 +33,7 @@ namespace Prism.Windows.Validation
         /// </value>
         public bool IsValidationEnabled
         {
-            get { return _bindableValidator.IsValidationEnabled; }
-            set { _bindableValidator.IsValidationEnabled = value; }
+            get => _bindableValidator.IsValidationEnabled; set => _bindableValidator.IsValidationEnabled = value;
         }
 
         /// <summary>

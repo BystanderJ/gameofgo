@@ -126,16 +126,17 @@
     <Compile Include="Common\SuspensionManager.cs" />
     <Compile Include="Converters.cs" />
     <Compile Include="Enums.cs" />
-    <Compile Include="Services\FuegoGame.cs" />
-    <Compile Include="Services\IGame.cs" />
+    <Compile Include="Services\FuegoGameEngine.cs" />
+    <Compile Include="Services\IGameEngine.cs" />
+    <Compile Include="Services\ISessionStateManager.cs" />
     <Compile Include="ViewModels\BaseViewModel.cs" />
     <Compile Include="ViewModels\Enums.cs" />
     <Compile Include="ViewModels\GameSettingsViewModel.cs" />
     <Compile Include="ViewModels\GamePageViewModel.cs" />
-    <Compile Include="ViewModels\MainPageViewModel.cs" />
     <Compile Include="ViewModels\PageViewModel.cs" />
     <Compile Include="ViewModels\PlayerSettingsViewModel.cs" />
     <Compile Include="ViewModels\PlayerViewModel.cs" />
+    <Compile Include="ViewModels\MainPageViewModel.cs" />
     <Compile Include="ViewModels\SinglePlayerPageViewModel.cs" />
     <Compile Include="Views\GamePage.xaml.cs">
       <DependentUpon>GamePage.xaml</DependentUpon>
@@ -145,6 +146,9 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Views\NavigationAwarePage.cs" />
+    <Compile Include="Views\MainPage.xaml.cs">
+      <DependentUpon>MainPage.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\SinglePlayerPage.xaml.cs">
       <DependentUpon>SinglePlayerPage.xaml</DependentUpon>
     </Compile>
@@ -210,6 +214,10 @@
     <Page Include="Views\HistoryItemUserControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\MainPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\SinglePlayerPage.xaml">
       <SubType>Designer</SubType>

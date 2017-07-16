@@ -3,7 +3,6 @@ using GoG.Infrastructure;
 using GoG.Infrastructure.Engine;
 using GoG.Infrastructure.Services.Engine;
 using GoG.WinRT.Services;
-using Microsoft.Practices.Unity;
 using Prism.Commands;
 using Prism.Windows.AppModel;
 using Prism.Windows.Navigation;
@@ -13,22 +12,29 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+// ReSharper disable RedundantCatchClause
+
+// ReSharper disable ExplicitCallerInfoArgument
 
 namespace GoG.WinRT.ViewModels
 {
     public class GamePageViewModel : PageViewModel
     {
         #region Ctor
-        public GamePageViewModel(IUnityContainer c)
-            : base(c)
+        public GamePageViewModel(INavigationService navigationService,
+            ISessionStateService sessionStateService,
+            IGameEngine engine) : base(navigationService, sessionStateService, engine)
         {
         }
         #endregion Ctor
 
         #region Data
 
+        private GoColor? _savedColor;
         private string _hint;
         private PlayerViewModel[] _players;
+        private GoGame _activeGame;
+        private Guid _activeGameId;
 
         #endregion Data
 
@@ -39,8 +45,7 @@ namespace GoG.WinRT.ViewModels
         [RestorableState]
         public bool ShowingArea
         {
-            get { return _showingArea; }
-            set { SetProperty(ref _showingArea, value); }
+            get => _showingArea; set => SetProperty(ref _showingArea, value);
         }
         #endregion ShowingArea
 
@@ -48,8 +53,7 @@ namespace GoG.WinRT.ViewModels
         private string _messageText;
         public string MessageText
         {
-            get { return _messageText; }
-            set
+            get => _messageText; set
             {
                 if (_messageText == value)
                     return;
@@ -59,22 +63,12 @@ namespace GoG.WinRT.ViewModels
             }
         }
         #endregion Message
-
-        #region ActiveGame
-        private IGame _activeGame;
-        public IGame ActiveGame
-        {
-            get { return _activeGame; }
-            set { _activeGame = value; RaisePropertyChanged(); }
-        }
-        #endregion ActiveGame
-
+        
         #region Status
         private GoGameStatus _status;
         public GoGameStatus Status
         {
-            get { return _status; }
-            set
+            get => _status; set
             {
                 if (_status == value)
                     return;
@@ -91,8 +85,7 @@ namespace GoG.WinRT.ViewModels
         private int _boardEdgeSize;
         public int BoardEdgeSize
         {
-            get { return _boardEdgeSize; }
-            set { SetProperty(ref _boardEdgeSize, value); }
+            get => _boardEdgeSize; set => SetProperty(ref _boardEdgeSize, value);
         }
         #endregion BoardEdgeSize
 
@@ -100,8 +93,7 @@ namespace GoG.WinRT.ViewModels
         private Dictionary<string, PieceStateViewModel> _pieces;
         public Dictionary<string, PieceStateViewModel> Pieces
         {
-            get { return _pieces; }
-            set { _pieces = value; OnPropertyChanged("Pieces"); }
+            get => _pieces; set { _pieces = value; RaisePropertyChanged(); }
         }
         #endregion Pieces
 
@@ -109,8 +101,7 @@ namespace GoG.WinRT.ViewModels
         private GoColor _currentTurnColor = GoColor.Black;
         public GoColor CurrentTurnColor
         {
-            get { return _currentTurnColor; }
-            set { SetProperty(ref _currentTurnColor, value); }
+            get => _currentTurnColor; set => SetProperty(ref _currentTurnColor, value);
         }
         #endregion CurrentTurnColor
 
@@ -118,8 +109,7 @@ namespace GoG.WinRT.ViewModels
         private ObservableCollection<GoMoveHistoryItem> _history;
         public ObservableCollection<GoMoveHistoryItem> History
         {
-            get { return _history; }
-            set { _history = value; OnPropertyChanged("History"); }
+            get => _history; set { _history = value; RaisePropertyChanged(); }
         }
         #endregion History
 
@@ -127,29 +117,25 @@ namespace GoG.WinRT.ViewModels
         private int _whoseTurn;
         public int WhoseTurn
         {
-            get { return _whoseTurn; }
-            set
+            get => _whoseTurn; set
             {
                 SetProperty(ref _whoseTurn, value);
                 CurrentTurnColor = _players[_whoseTurn].Color;
-                OnPropertyChanged(nameof(WhoseTurn));
+                RaisePropertyChanged();
             }
         }
         #endregion WhoseTurn
 
         #region CurrentPlayer
-        public PlayerViewModel CurrentPlayer
-        {
-            get { return _players[WhoseTurn]; }
-        }
+        public PlayerViewModel CurrentPlayer => _players[WhoseTurn];
+
         #endregion CurrentPlayer
 
         #region Player1
         private PlayerViewModel _player1;
         public PlayerViewModel Player1
         {
-            get { return _player1; }
-            set { SetProperty(ref _player1, value); }
+            get => _player1; set => SetProperty(ref _player1, value);
         }
         #endregion Player1
 
@@ -157,8 +143,7 @@ namespace GoG.WinRT.ViewModels
         private PlayerViewModel _player2;
         public PlayerViewModel Player2
         {
-            get { return _player2; }
-            set { SetProperty(ref _player2, value); }
+            get => _player2; set => SetProperty(ref _player2, value);
         }
         #endregion Player2
 
@@ -187,7 +172,7 @@ namespace GoG.WinRT.ViewModels
 
             MessageText = "Getting hint...";
             IsBusy = true;
-            var resp = await ActiveGame.HintAsync(_players[WhoseTurn].Color);
+            var resp = await GameEngine.HintAsync(_activeGameId, _players[WhoseTurn].Color);
             IsBusy = false;
             MessageText = null;
 
@@ -204,7 +189,7 @@ namespace GoG.WinRT.ViewModels
                     //InvokeFleetingMessage("How about " + resp.Move.Position + '?');
                 }
                 else
-                    InvokeFleetingMessage("Perhaps you should " + resp.Move.ToString().ToLower() + '.', 1500);
+                    InvokeFleetingMessage("Perhaps you should " + resp.Move.ToString().ToLower() + '.', 1500).Forget();
             }
             else if (resp.ResultCode == GoResultCode.CommunicationError)
                 await HandleCommunicationError("Syncronizing...");
@@ -241,25 +226,20 @@ namespace GoG.WinRT.ViewModels
         #endregion GetHintCommand
 
         #region PassCommand
-
         DelegateCommand<object> _passCommand;
-        public DelegateCommand<object> PassCommand
-        {
-            get { return _passCommand ?? (_passCommand = new DelegateCommand<object>(ExecutePassCommand, CanPassCommand)); }
-        }
+        public DelegateCommand<object> PassCommand => _passCommand ?? (_passCommand = new DelegateCommand<object>(ExecutePassCommand, CanPassCommand));
         public bool CanPassCommand(object position)
         {
             //Novalidation required at in version 1.0. Since the human player si always activated
             return IsBusy == false && Status == GoGameStatus.Active;
         }
-
         public async void ExecutePassCommand(object position)
         {
             MessageText = "Passing...";
             IsBusy = true;
             var move = new GoMove(MoveType.Pass,
                                   _players[WhoseTurn].Color, null);
-            var resp = await ActiveGame.PlayAsync(move);
+            var resp = await GameEngine.PlayAsync(_activeGameId, move);
             IsBusy = false;
             MessageText = null;
 
@@ -267,7 +247,7 @@ namespace GoG.WinRT.ViewModels
             {
                 AddMoveToHistory(resp.Move, resp.MoveResult);
                 SwapTurns();
-                SetState(resp.MoveResult.Status, resp.MoveResult.WinMargin);
+                AdjustToState(resp.MoveResult.Status, resp.MoveResult.WinMargin);
                 if (Status == GoGameStatus.Active)
                     PlayCurrentUser();
             }
@@ -276,20 +256,17 @@ namespace GoG.WinRT.ViewModels
             else
             {
                 await DisplayErrorCode(resp.ResultCode);
-                LoadGameFromRepoAsync("Syncronizing...");
+                LoadGameFromEngineAsync("Syncronizing...");
             }
 
             RaiseCommandsChanged();
         }
-
         #endregion
 
         #region PressedCommand
         DelegateCommand<string> _pressedCommand;
-        public DelegateCommand<string> PressedCommand
-        {
-            get { return _pressedCommand ?? (_pressedCommand = new DelegateCommand<string>(ExecutePressedCommand, CanPressedCommand)); }
-        }
+        public DelegateCommand<string> PressedCommand => _pressedCommand ?? (_pressedCommand = new DelegateCommand<string>(ExecutePressedCommand, CanPressedCommand));
+
         public bool CanPressedCommand(string position)
         {
             return position != null &&
@@ -302,9 +279,6 @@ namespace GoG.WinRT.ViewModels
                    _players.Length == 2 &&
                    _players[WhoseTurn].PlayerType == PlayerType.Human;
         }
-
-        private GoColor? _savedColor;
-
         public async void ExecutePressedCommand(string position)
         {
             // Note: position is the Go position such as "A15" where the user pressed.
@@ -321,7 +295,7 @@ namespace GoG.WinRT.ViewModels
             var move = new GoMove(MoveType.Normal,
                                   _players[WhoseTurn].Color,
                                   position);
-            GoMoveResponse resp = await ActiveGame.PlayAsync(move);
+            GoMoveResponse resp = await GameEngine.PlayAsync(_activeGameId, move);
             IsBusy = false;
             MessageText = null;
 
@@ -334,7 +308,7 @@ namespace GoG.WinRT.ViewModels
                 Pieces[position].RaiseMultiplePropertiesChanged();
                 SwapTurns();
 
-                SetState(resp.MoveResult.Status, resp.MoveResult.WinMargin);
+                AdjustToState(resp.MoveResult.Status, resp.MoveResult.WinMargin);
                 if (Status == GoGameStatus.Active)
                     PlayCurrentUser();
             }
@@ -379,7 +353,7 @@ namespace GoG.WinRT.ViewModels
             var move = new GoMove(MoveType.Resign,
                                   _players[WhoseTurn].Color,
                                   null);
-            var resp = await ActiveGame.PlayAsync(move);
+            var resp = await GameEngine.PlayAsync(_activeGameId, move);
             IsBusy = false;
             MessageText = null;
 
@@ -387,14 +361,14 @@ namespace GoG.WinRT.ViewModels
             {
                 //AddMoveToHistory(resp.Move, resp.MoveResult);
                 SwapTurns();
-                SetState(resp.MoveResult.Status, resp.MoveResult.WinMargin);
+                AdjustToState(resp.MoveResult.Status, resp.MoveResult.WinMargin);
             }
             else if (resp.ResultCode == GoResultCode.CommunicationError)
                 await HandleCommunicationError("Resigning...");
             else
             {
                 await DisplayErrorCode(resp.ResultCode);
-                LoadGameFromRepoAsync("Syncronizing...");
+                LoadGameFromEngineAsync("Syncronizing...");
             }
 
             RaiseCommandsChanged();
@@ -431,7 +405,7 @@ namespace GoG.WinRT.ViewModels
 
             MessageText = "Undoing...";
             IsBusy = true;
-            var resp = await ActiveGame.UndoAsync();
+            var resp = await GameEngine.UndoAsync(_activeGameId);
             IsBusy = false;
             MessageText = null;
 
@@ -455,7 +429,7 @@ namespace GoG.WinRT.ViewModels
             else
             {
                 await DisplayErrorCode(resp.ResultCode);
-                LoadGameFromRepoAsync("Undoing...");
+                LoadGameFromEngineAsync("Undoing...");
             }
 
             RaiseCommandsChanged();
@@ -463,10 +437,10 @@ namespace GoG.WinRT.ViewModels
         #endregion UndoCommand
 
         #region ShowAreaCommand
-        DelegateCommand _ShowAreaCommand;
+        DelegateCommand _showAreaCommand;
         public DelegateCommand ShowAreaCommand
         {
-            get { if (_ShowAreaCommand == null) _ShowAreaCommand = new DelegateCommand(ExecuteShowArea, CanShowArea); return _ShowAreaCommand; }
+            get { if (_showAreaCommand == null) _showAreaCommand = new DelegateCommand(ExecuteShowArea, CanShowArea); return _showAreaCommand; }
         }
         public bool CanShowArea()
         {
@@ -474,7 +448,7 @@ namespace GoG.WinRT.ViewModels
                 return false;
             return true;
         }
-        public async void ExecuteShowArea()
+        public void ExecuteShowArea()
         {
             ShowingArea = !ShowingArea;
             
@@ -491,7 +465,7 @@ namespace GoG.WinRT.ViewModels
             RaiseCommandsChanged();
         }
 
-        public override void OnNavigatedTo(NavigatedToEventArgs e, 
+        public override async void OnNavigatedTo(NavigatedToEventArgs e, 
             Dictionary<string, object> viewModelState)
         {
             try
@@ -499,26 +473,30 @@ namespace GoG.WinRT.ViewModels
                 AbortOperation = false;
 
                 base.OnNavigatedTo(e, viewModelState);
+                
+                if (e.Parameter is Guid)
+                {
+                    // Resume a single player game using the navigation parameter sent in.
+                    _activeGameId = (Guid)e.Parameter;
+                }
 
-                SessionStateService.SessionState[]
+                if (_activeGameId == Guid.Empty)
+                {
+                    GoBackDeferred();
+                    return;
+                }
 
-                //// If a SinglePlayerPageViewModel is passed in, this is a new game
-                //// just created by user.  If not, active game from restorable state is used.
-                //if (e.Parameter is Guid)
-                //{
-                //    // Start a single player game using the navigation parameter sent in.
-                //    ActiveGame = (Guid)e.Parameter;
-                //}
-
-                //if (ActiveGame == Guid.Empty)
-                //{
-                //    //await DisplayMessage("Error", "Please start a new game.");
-                //    GoBackDeferred();
-                //}
-                //else
-                //    LoadGameFromRepoAsync("Syncronizing...");
+                var resp = await GameEngine.GetGameStateAsync(_activeGameId);
+                if (resp.ResultCode != GoResultCode.Success)
+                {
+                    GoBackDeferred();
+                    return;
+                }
+                _activeGame = resp.GameState;
+                
+                LoadGameFromEngineAsync("Syncronizing...");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }
@@ -543,7 +521,7 @@ namespace GoG.WinRT.ViewModels
             switch (CurrentPlayer.PlayerType)
             {
                 case PlayerType.AI:
-                    PlayAI();
+                    PlayAi();
                     break;
                 case PlayerType.Human:
                     // Nothing to do, just wait for user to make his move.
@@ -555,11 +533,11 @@ namespace GoG.WinRT.ViewModels
             }
         }
 
-        private async void PlayAI()
+        private async void PlayAi()
         {
             MessageText = _players[WhoseTurn].Name + " is thinking...";
             IsBusy = true;
-            var resp = await ActiveGame.GenMoveAsync(ActiveGame, _players[WhoseTurn].Color);
+            var resp = await GameEngine.GenMoveAsync(_activeGameId, _players[WhoseTurn].Color);
             IsBusy = false;
             MessageText = null;
 
@@ -592,7 +570,7 @@ namespace GoG.WinRT.ViewModels
                         AddMoveToHistory(resp.Move, resp.MoveResult);
                         await InvokeFleetingMessage(CurrentPlayer.Name + " passes.", 1500);
                         SwapTurns();
-                        SetState(resp.MoveResult.Status, resp.MoveResult.WinMargin);
+                        AdjustToState(resp.MoveResult.Status, resp.MoveResult.WinMargin);
                         if (Status == GoGameStatus.Active)
                             PlayCurrentUser();
                         break;
@@ -614,7 +592,7 @@ namespace GoG.WinRT.ViewModels
         private async Task HandleCommunicationError(string msg)
         {
             await DisplayErrorCode(GoResultCode.CommunicationError);
-            LoadGameFromRepoAsync(msg);
+            LoadGameFromEngineAsync(msg);
         }
 
         private void RaiseAllPiecesChanged()
@@ -662,61 +640,61 @@ namespace GoG.WinRT.ViewModels
 
         }
 
-        private void UndoMovesFromHistory()
-        {
-            if (Status == GoGameStatus.BlackWonDueToResignation || Status == GoGameStatus.WhiteWonDueToResignation)
-                History.RemoveAt(0);
-            else
-            {
-                Debug.Assert(History.Count < 2, "Can't undo more moves than have been made.");
+        //private void UndoMovesFromHistory()
+        //{
+        //    if (Status == GoGameStatus.BlackWonDueToResignation || Status == GoGameStatus.WhiteWonDueToResignation)
+        //        History.RemoveAt(0);
+        //    else
+        //    {
+        //        Debug.Assert(History.Count < 2, "Can't undo more moves than have been made.");
 
-                int count = 2;
-                if (History.Count % 2 == 1)
-                    count = 1;
+        //        int count = 2;
+        //        if (History.Count % 2 == 1)
+        //            count = 1;
                 
-                // Pop off the top move.
-                for (int i = 0; i < count; i++)
-                {
-                    var his = History[0];
-                    var pos = his.Move.Position;
-                    if (his.Move.MoveType == MoveType.Normal)
-                    {
-                        if (Pieces.ContainsKey(pos))
-                        {
-                            var piece = Pieces[pos];
-                            piece.IsNewPiece = false;
-                            piece.Color = null;
-                            piece.RaiseMultiplePropertiesChanged();
-                        }
+        //        // Pop off the top move.
+        //        for (int i = 0; i < count; i++)
+        //        {
+        //            var his = History[0];
+        //            var pos = his.Move.Position;
+        //            if (his.Move.MoveType == MoveType.Normal)
+        //            {
+        //                if (Pieces.ContainsKey(pos))
+        //                {
+        //                    var piece = Pieces[pos];
+        //                    piece.IsNewPiece = false;
+        //                    piece.Color = null;
+        //                    piece.RaiseMultiplePropertiesChanged();
+        //                }
 
-                        var player = _players.First(p => p.Color == his.Move.Color);
+        //                var player = _players.First(p => p.Color == his.Move.Color);
 
-                        // Restore any captured pieces.
-                        foreach (var cap in his.Result.CapturedStones.Split(' '))
-                        {
-                            if (cap != String.Empty && Pieces.ContainsKey(cap))
-                            {
-                                player.Prisoners--;
+        //                // Restore any captured pieces.
+        //                foreach (var cap in his.Result.CapturedStones.Split(' '))
+        //                {
+        //                    if (cap != String.Empty && Pieces.ContainsKey(cap))
+        //                    {
+        //                        player.Prisoners--;
 
-                                var piece = Pieces[cap];
-                                piece.IsNewPiece = false;
-                                piece.Color = his.Move.Color == GoColor.Black ? GoColor.White : GoColor.Black;
-                                piece.RaiseMultiplePropertiesChanged();
-                            }
-                        }
-                    }
+        //                        var piece = Pieces[cap];
+        //                        piece.IsNewPiece = false;
+        //                        piece.Color = his.Move.Color == GoColor.Black ? GoColor.White : GoColor.Black;
+        //                        piece.RaiseMultiplePropertiesChanged();
+        //                    }
+        //                }
+        //            }
 
-                    History.RemoveAt(0);
-                }
+        //            History.RemoveAt(0);
+        //        }
 
-                var latestPiece = GetLatestNormalMovePieceFromHistory();
-                if (latestPiece != null)
-                {
-                    latestPiece.IsNewPiece = true;
-                    latestPiece.RaiseMultiplePropertiesChanged();
-                }
-            }
-        }
+        //        var latestPiece = GetLatestNormalMovePieceFromHistory();
+        //        if (latestPiece != null)
+        //        {
+        //            latestPiece.IsNewPiece = true;
+        //            latestPiece.RaiseMultiplePropertiesChanged();
+        //        }
+        //    }
+        //}
 
         private PieceStateViewModel GetLatestNormalMovePieceFromHistory()
         {
@@ -755,35 +733,23 @@ namespace GoG.WinRT.ViewModels
                 }
         }
 
-        // Tries to get state from repo.  Then, calls ContinueGameFromState()
-        // to sync our state with it.  Displays appropriate messages and retries as necessary.
-        private async void LoadGameFromRepoAsync(string msg)
+        // Tries to get state from engine.  Then, calls ContinueGameFromState()
+        // to sync our state with it.  Displays appropriate messages and retries 
+        // as necessary.
+        private async void LoadGameFromEngineAsync(string msg)
         {
-            GoGameStateResponse resp = null;
-
             MessageText = msg;
             IsBusy = true;
-
-            if (ActiveGame != Guid.Empty)
-            {
-                if (AbortOperation)
-                    return;
-
-                var exists = await ActiveGame.GetGameExists(ActiveGame);
-                if (exists.ResultCode == GoResultCode.GameDoesNotExist)
-                {
-                    if (AbortOperation)
-                        return;
-
-                    resp = await ActiveGame.StartAsync(ActiveGame, null);
-                    Debug.Assert(resp != null && resp.ResultCode == GoResultCode.Success, "resp != null && resp.ResultCode == GoResultCode.Success");
-                }
-            }
 
             if (AbortOperation)
                 return;
 
-            resp = await ActiveGame.GetGameStateAsync(ActiveGame);
+            await GameEngine.CreateOrSyncToGameAsync(_activeGameId, _activeGame);
+
+            if (AbortOperation)
+                return;
+            
+            var resp = await GameEngine.GetGameStateAsync(_activeGameId);
             IsBusy = false;
             MessageText = null;
 
@@ -796,14 +762,14 @@ namespace GoG.WinRT.ViewModels
             {
                 ContinueGameFromState(resp.GameState);
 
-                // Reflect actual operation happening on server and retry sync.
+                // Reflect actual operation happening in engine and retry sync.
                 switch (resp.GameState.Operation)
                 {
                     case GoOperation.GenMove:
-                        await WaitAndRetryLoadGameFromServerAsync(5000, "Fuego is thinking...");
+                        await WaitAndRetryLoadGameFromEngineAsync(5000, "Fuego is thinking...");
                         break;
                     case GoOperation.Starting:
-                        await WaitAndRetryLoadGameFromServerAsync(5000, "Starting game...");
+                        await WaitAndRetryLoadGameFromEngineAsync(5000, "Starting game...");
                         break;
                     case GoOperation.Hint:
                     case GoOperation.NormalMove:
@@ -814,7 +780,7 @@ namespace GoG.WinRT.ViewModels
                             break;
                         RunOnUIThread(() =>
                         {
-                            SetState(resp.GameState.Status, resp.GameState.WinMargin);
+                            AdjustToState(resp.GameState.Status, resp.GameState.WinMargin);
                             if (Status == GoGameStatus.Active)
                                     PlayCurrentUser();
                         });
@@ -830,7 +796,7 @@ namespace GoG.WinRT.ViewModels
 
         // This method is used by LoadGameFromServerAsync() to call itself recursively
         // (on another thread) after a given delay.
-        private async Task WaitAndRetryLoadGameFromServerAsync(int delay, string msg)
+        private async Task WaitAndRetryLoadGameFromEngineAsync(int delay, string msg)
         {
             IsBusy = true;
             MessageText = msg;
@@ -841,12 +807,14 @@ namespace GoG.WinRT.ViewModels
                          if (!AbortOperation)
                              Task.Delay(delay).Wait();
                          if (!AbortOperation)
-                             RunOnUIThread(() => LoadGameFromRepoAsync(msg));
+                             RunOnUIThread(() => LoadGameFromEngineAsync(msg));
                      });
         }
 
-        private void ContinueGameFromState(GoGameState state)
+        private void ContinueGameFromState(GoGame state)
         {
+            _activeGame = state;
+
             // Player1 is always black, Player2 is always white.
             Player1 = new PlayerViewModel(state.Player1, GoColor.Black);
             Player2 = new PlayerViewModel(state.Player2, GoColor.White);
@@ -857,7 +825,7 @@ namespace GoG.WinRT.ViewModels
             RaisePropertyChanged(nameof(WhoseTurn));
             CurrentTurnColor = _players[_whoseTurn].Color;
 
-            SetState(state.Status, state.WinMargin);
+            AdjustToState(state.Status, state.WinMargin);
 
             // Note that setting BoardEdgeSize triggers the board control to generate.
             BoardEdgeSize = state.Size;
@@ -911,7 +879,7 @@ namespace GoG.WinRT.ViewModels
             RaiseCommandsChanged();
         }
 
-        private void SetState(GoGameStatus status, decimal margin)
+        private void AdjustToState(GoGameStatus status, decimal margin)
         {
             Status = status;
             

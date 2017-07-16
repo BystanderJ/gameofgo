@@ -1,22 +1,23 @@
-﻿using GoG.Infrastructure.Engine;
-using GoG.WinRT.Services;
-using GoG.WinRT.ViewModels;
-using Microsoft.HockeyApp;
-using Microsoft.Practices.Unity;
-using Prism.Unity.Windows;
-using System;
+﻿using System;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Activation;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using GoG.Infrastructure.Engine;
+using GoG.WinRT.Services;
+using GoG.WinRT.ViewModels;
+using Microsoft.HockeyApp;
+using Microsoft.Practices.Unity;
+using Prism.Mvvm;
+using Prism.Unity.Windows;
 
 namespace GoG.WinRT
 {
     /// <summary>
     /// Provides application-specific behavior to supplement the default Application class.
     /// </summary>
-    sealed partial class App : PrismUnityApplication
+    sealed partial class App
     {
         public App()
         {
@@ -32,7 +33,7 @@ namespace GoG.WinRT
 
                         if (Container != null)
                         {
-                            var nav = base.NavigationService;
+                            var nav = NavigationService;
                             if (nav != null)
                                 msg.AppendLine("INavigationService.CanGoBack() == " + nav.CanGoBack());
 
@@ -80,7 +81,7 @@ namespace GoG.WinRT
 
             InitializeComponent();
 
-            this.UnhandledException += OnUnhandledException;
+            UnhandledException += OnUnhandledException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
             
             RequestedTheme = ApplicationTheme.Dark;
@@ -103,7 +104,7 @@ namespace GoG.WinRT
             base.OnRegisterKnownTypesForSerialization();
 
             // These types are used in the game state.
-            SessionStateService.RegisterKnownType(typeof(GoGameState));
+            SessionStateService.RegisterKnownType(typeof(GoGame));
             SessionStateService.RegisterKnownType(typeof(GoPlayer));
             SessionStateService.RegisterKnownType(typeof(PlayerType));
             SessionStateService.RegisterKnownType(typeof(GoGameStatus));
@@ -117,18 +118,12 @@ namespace GoG.WinRT
             SessionStateService.RegisterKnownType(typeof(GoMoveResult));
         }
 
-        protected override async void OnLaunched(LaunchActivatedEventArgs args)
+        protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
             if (args.PrelaunchActivated)
-            {
                 return;
-            }
 
             base.OnLaunched(args);
-
-            //NavigationService.
-
-            //HockeyClient.Current.Configure();TrackEvent("Event1");
         }
 
         /// <summary>
@@ -144,7 +139,7 @@ namespace GoG.WinRT
             // for mapping view names to view types, you can override 
             // the MvvmAppBase.GetPageNameToTypeResolver method
             if (args.PreviousExecutionState != ApplicationExecutionState.Terminated)
-                NavigationService.Navigate("SinglePlayer", null);
+                NavigationService.Navigate("Main", null);
 
             return Task.FromResult<object>(null);
         }        
@@ -157,7 +152,7 @@ namespace GoG.WinRT
         {
             // Set a factory for the ViewModelLocator to use the container to construct view models so their 
             // dependencies get injected by the container
-            Prism.Mvvm.ViewModelLocationProvider.SetDefaultViewModelFactory((viewModelType) => Resolve(viewModelType));
+            ViewModelLocationProvider.SetDefaultViewModelFactory(viewModelType => Resolve(viewModelType));
 
             return Task.FromResult<object>(null);
         }
@@ -175,8 +170,9 @@ namespace GoG.WinRT
             base.ConfigureContainer();
             
             // Register any app specific types with the container
-            Container.RegisterType(typeof(IGame), typeof(FuegoGame), new ContainerControlledLifetimeManager());
+            Container.RegisterType(typeof(IGameEngine), typeof(FuegoGameEngine), new ContainerControlledLifetimeManager());
 
+            RegisterTypeIfMissing(typeof(MainPageViewModel), typeof(MainPageViewModel), true);
             RegisterTypeIfMissing(typeof(SinglePlayerPageViewModel), typeof(SinglePlayerPageViewModel), true);
             RegisterTypeIfMissing(typeof(GamePageViewModel), typeof(GamePageViewModel), true);            
         }

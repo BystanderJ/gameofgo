@@ -42,8 +42,7 @@ namespace Prism.Windows.Navigation
         /// </returns>
         public object Content
         {
-            get { return _frame.Content; }
-            set { _frame.Content = value; }
+            get => _frame.Content; set => _frame.Content = value;
         }
 
         /// <summary>

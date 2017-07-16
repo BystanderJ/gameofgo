@@ -62,8 +62,7 @@ namespace GoG.WinRT.Common
         /// </summary>
         public RichTextBlock RichTextContent
         {
-            get { return (RichTextBlock)GetValue(RichTextContentProperty); }
-            set { SetValue(RichTextContentProperty, value); }
+            get => (RichTextBlock)GetValue(RichTextContentProperty); set => SetValue(RichTextContentProperty, value);
         }
 
         /// <summary>
@@ -72,8 +71,7 @@ namespace GoG.WinRT.Common
         /// </summary>
         public DataTemplate ColumnTemplate
         {
-            get { return (DataTemplate)GetValue(ColumnTemplateProperty); }
-            set { SetValue(ColumnTemplateProperty, value); }
+            get => (DataTemplate)GetValue(ColumnTemplateProperty); set => SetValue(ColumnTemplateProperty, value);
         }
 
         /// <summary>

@@ -12,11 +12,11 @@ namespace GoG.Infrastructure.Services.Engine
         {
         }
 
-        public GoGameStateResponse(GoResultCode resultCode, GoGameState gameState) : base(resultCode)
+        public GoGameStateResponse(GoResultCode resultCode, GoGame gameState) : base(resultCode)
         {
             GameState = gameState;
         }
 
-        public GoGameState GameState { get; set; }
+        public GoGame GameState { get; set; }
     }
 }

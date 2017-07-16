@@ -103,7 +103,7 @@ namespace GoG.Board
             {
                 // This control isn't fully loaded yet, delay on another thread
                 // until OnApplyTemplate() is executed.
-                Task.Factory.StartNew(
+                Task.Run(
                     async () =>
                     {
                         while(_displayMessageStoryboard == null)
@@ -425,8 +425,7 @@ namespace GoG.Board
         #region Pieces
         public Dictionary<string, PieceStateViewModel> Pieces
         {
-            get { return (Dictionary<string, PieceStateViewModel>)GetValue(PiecesProperty); }
-            set { SetValue(PiecesProperty, value); }
+            get => (Dictionary<string, PieceStateViewModel>)GetValue(PiecesProperty); set => SetValue(PiecesProperty, value);
         }
         public static readonly DependencyProperty PiecesProperty =
             DependencyProperty.Register("Pieces", typeof(Dictionary<string, PieceStateViewModel>), typeof(GameBoard), new PropertyMetadata(null, OnPiecesChanged));
@@ -496,8 +495,7 @@ namespace GoG.Board
         /// </summary>
         public string CurrentPointerPosition
         {
-            get { return (string)GetValue(CurrentPointerPositionProperty); }
-            set { SetValue(CurrentPointerPositionProperty, value); }
+            get => (string)GetValue(CurrentPointerPositionProperty); set => SetValue(CurrentPointerPositionProperty, value);
         }
         public static readonly DependencyProperty CurrentPointerPositionProperty =
             DependencyProperty.Register("CurrentPointerPosition", typeof(string), typeof(GameBoard), new PropertyMetadata(null, CurrentPointerPositionChanged));
@@ -514,8 +512,7 @@ namespace GoG.Board
         /// </summary>
         public ICommand PressedCommand
         {
-            get { return (ICommand)GetValue(PressedCommandProperty); }
-            set { SetValue(PressedCommandProperty, value); }
+            get => (ICommand)GetValue(PressedCommandProperty); set => SetValue(PressedCommandProperty, value);
         }
         public static readonly DependencyProperty PressedCommandProperty =
             DependencyProperty.Register("PressedCommand", typeof(ICommand), typeof(GameBoard), new PropertyMetadata(null));
@@ -524,8 +521,7 @@ namespace GoG.Board
         #region BoardEdgeSize
         public int BoardEdgeSize
         {
-            get { return (int)GetValue(BoardEdgeSizeProperty); }
-            set { SetValue(BoardEdgeSizeProperty, value); }
+            get => (int)GetValue(BoardEdgeSizeProperty); set => SetValue(BoardEdgeSizeProperty, value);
         }
         public static readonly DependencyProperty BoardEdgeSizeProperty =
             DependencyProperty.Register("BoardEdgeSize", typeof(int), typeof(GameBoard), new PropertyMetadata(0, BoardEdgeSizePropertyChangedCallback));
@@ -541,8 +537,7 @@ namespace GoG.Board
         #region ShowHeaders
         public bool ShowHeaders
         {
-            get { return (bool)GetValue(ShowHeadersProperty); }
-            set { SetValue(ShowHeadersProperty, value); }
+            get => (bool)GetValue(ShowHeadersProperty); set => SetValue(ShowHeadersProperty, value);
         }
         public static readonly DependencyProperty ShowHeadersProperty =
             DependencyProperty.Register("ShowHeaders", typeof(bool), typeof(GameBoard), new PropertyMetadata(true));
@@ -551,8 +546,7 @@ namespace GoG.Board
         #region MessageText
         public string MessageText
         {
-            get { return (string)GetValue(MessageTextProperty); }
-            set { SetValue(MessageTextProperty, value); }
+            get => (string)GetValue(MessageTextProperty); set => SetValue(MessageTextProperty, value);
         }
         public static readonly DependencyProperty MessageTextProperty =
             DependencyProperty.Register("MessageText", typeof(string), typeof(GameBoard), new PropertyMetadata(null));
@@ -561,8 +555,7 @@ namespace GoG.Board
         #region IsBusy
         public bool IsBusy
         {
-            get { return (bool)GetValue(IsBusyProperty); }
-            set { SetValue(IsBusyProperty, value); }
+            get => (bool)GetValue(IsBusyProperty); set => SetValue(IsBusyProperty, value);
         }
         public static readonly DependencyProperty IsBusyProperty =
             DependencyProperty.Register("IsBusy", typeof(bool), typeof(GameBoard), new PropertyMetadata(false));

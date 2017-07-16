@@ -1,6 +1,4 @@
-﻿using System.Runtime.Serialization;
-
-namespace GoG.Infrastructure.Engine
+﻿namespace GoG.Infrastructure.Engine
 {
     
     public class GoPlayer

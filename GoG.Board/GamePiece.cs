@@ -88,8 +88,7 @@ namespace GoG.Board
         #region Sequence
         public string Sequence
         {
-            get { return (string)GetValue(SequenceProperty); }
-            set { SetValue(SequenceProperty, value); }
+            get => (string)GetValue(SequenceProperty); set => SetValue(SequenceProperty, value);
         }
         public static readonly DependencyProperty SequenceProperty =
             DependencyProperty.Register("Sequence", typeof(string), typeof(GamePiece), new PropertyMetadata(null));
@@ -98,8 +97,7 @@ namespace GoG.Board
         #region CircleMargin
         public Thickness CircleMargin
         {
-            get { return (Thickness)GetValue(CircleMarginProperty); }
-            set { SetValue(CircleMarginProperty, value); }
+            get => (Thickness)GetValue(CircleMarginProperty); set => SetValue(CircleMarginProperty, value);
         }
         public static readonly DependencyProperty CircleMarginProperty =
             DependencyProperty.Register("CircleMargin", typeof(Thickness), typeof(GamePiece), new PropertyMetadata(5D));
