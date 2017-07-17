@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Windows.System;
 using GoG.Infrastructure.Engine;
 using GoG.Infrastructure.Services.Engine;
 using Prism.Commands;
@@ -16,13 +15,15 @@ namespace GoG.WinRT.ViewModels
     public class SinglePlayerPageViewModel : PageViewModel
     {
         #region Data
+        private readonly IRepository _repository;
         #endregion Data
 
         #region Ctor
         public SinglePlayerPageViewModel(INavigationService navigationService,
             ISessionStateService sessionStateService, 
-            IGameEngine engine) : base(navigationService, sessionStateService, engine)
+            IGameEngine engine, IRepository repository) : base(navigationService, sessionStateService, engine)
         {
+            _repository = repository;
             _boardEdgeSize = 9;
             _sizes = new List<Pair>
                 {
@@ -236,15 +237,18 @@ namespace GoG.WinRT.ViewModels
                         "",
                         new List<GoMoveHistoryItem>(), 
                         0);
-                    var tmpGuid = Guid.NewGuid();
-                    resp = await GameEngine.CreateOrSyncToGameAsync(tmpGuid, tmpState);
+                    tmpState.Id = Guid.NewGuid();
+                    resp = await GameEngine.CreateGameAsync(tmpState);
                     BusyMessage = null;
                     IsBusy = false;
 
                     if (resp.ResultCode == GoResultCode.Success)
                     {
+                        if (ActiveGame != Guid.Empty)
+                            await _repository.DeleteGameAsync(ActiveGame);
+
                         success = true;
-                        ActiveGame = tmpGuid;
+                        ActiveGame = tmpState.Id;
                     }
                 }
 

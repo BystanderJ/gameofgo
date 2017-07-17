@@ -1,18 +1,20 @@
-﻿using System.Collections.Generic;
-using System.Runtime.Serialization;
+﻿using System;
+using System.Collections.Generic;
 
 namespace GoG.Infrastructure.Engine
 {
     /// <summary>
     /// Game state contains information about the game and previous moves.
     /// </summary>
-    [DataContract]
     public class GoGame
     {
         /// <summary>
         /// Serialization ctor only.
         /// </summary>
-        public GoGame() { }
+        public GoGame()
+        {
+            Created = DateTime.UtcNow;
+        }
 
         public GoGame(
             byte size,
@@ -21,6 +23,7 @@ namespace GoG.Infrastructure.Engine
             GoColor whoseTurn, 
             string blackPositions, string whitePositions,
             List<GoMoveHistoryItem> goMoveHistory, decimal winMargin)
+            : this()
         {
             Size = size;
             Player1 = player1;
@@ -33,21 +36,19 @@ namespace GoG.Infrastructure.Engine
             WinMargin = winMargin;
         }
 
-        [DataMember]
+        public Guid Id { get; set; }
+
+        public bool ShowingArea { get; set; }
+
         public GoGameStatus Status { get; set; }
-        [DataMember]
         public decimal WinMargin { get; set; }
-        [DataMember]
         public GoPlayer Player1 { get; set; }
-        [DataMember]
         public GoPlayer Player2 { get; set; }
-        [DataMember]
         public GoOperation Operation { get; set; }
 
         /// <summary>
         /// Board edge size, usually 9x9, 13x13, or 19x19.
         /// </summary>
-        [DataMember]
         public byte Size { get; set; }
 
         ///// <summary>
@@ -58,21 +59,20 @@ namespace GoG.Infrastructure.Engine
         /// <summary>
         /// Whose turn is it?  Black or White?
         /// </summary>
-        [DataMember]
         public GoColor WhoseTurn { get; set; }
 
         /// <summary>
         /// Position of all the black stones.
         /// </summary>
-        [DataMember]
         public string BlackPositions { get; set; }
 
         /// <summary>
         /// Position of all the white stones.
         /// </summary>
-        [DataMember]
         public string WhitePositions { get; set; }
-        [DataMember]
+
+        public DateTime Created { get; set; }
+
         public List<GoMoveHistoryItem> GoMoveHistory { get; set; }
     }
 }

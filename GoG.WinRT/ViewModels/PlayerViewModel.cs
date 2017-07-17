@@ -1,6 +1,8 @@
 ﻿using GoG.Infrastructure.Engine;
 using Prism.Windows.Mvvm;
 
+// ReSharper disable ExplicitCallerInfoArgument
+
 namespace GoG.WinRT.ViewModels
 {
     public class PlayerViewModel : ViewModelBase
@@ -18,7 +20,7 @@ namespace GoG.WinRT.ViewModels
         private int _moveCount;
         public int MoveCount
         {
-            get => _moveCount; set { _moveCount = value; OnPropertyChanged("MoveCount"); }
+            get => _moveCount; set { _moveCount = value; RaisePropertyChanged(); }
         }
         #endregion MoveCount
 
@@ -66,10 +68,9 @@ namespace GoG.WinRT.ViewModels
             }
         }
 
-        private decimal _score;
         public decimal Score => _komi + _prisoners + _area;
 
-        private int _prisoners = 0;
+        private int _prisoners;
         public int Prisoners
         {
             get => _prisoners; set

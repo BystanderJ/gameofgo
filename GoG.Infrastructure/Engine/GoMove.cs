@@ -17,6 +17,8 @@ namespace GoG.Infrastructure.Engine
             Position = position;
         }
 
+        public int Id { get; set; }
+
         /// <summary>
         /// The side that made the move.
         /// </summary>

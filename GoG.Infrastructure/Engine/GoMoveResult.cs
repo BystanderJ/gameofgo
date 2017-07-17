@@ -40,7 +40,8 @@ namespace GoG.Infrastructure.Engine
             return rval.CombineStrings();
         }
 
-        
+        public int Id { get; set; }
+
         public string CapturedStones { get; set; }
 
         

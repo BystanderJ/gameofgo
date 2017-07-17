@@ -126,9 +126,21 @@
     <Compile Include="Common\SuspensionManager.cs" />
     <Compile Include="Converters.cs" />
     <Compile Include="Enums.cs" />
+    <Compile Include="Migrations\20170717100347_InitialMigration.cs" />
+    <Compile Include="Migrations\20170717100347_InitialMigration.designer.cs">
+      <DependentUpon>20170717100347_InitialMigration.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\20170717104539_AddCreatedToGoGame.cs" />
+    <Compile Include="Migrations\20170717104539_AddCreatedToGoGame.designer.cs">
+      <DependentUpon>20170717104539_AddCreatedToGoGame.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\GameContextModelSnapshot.cs" />
+    <Compile Include="Model\GameContext.cs" />
     <Compile Include="Services\FuegoGameEngine.cs" />
     <Compile Include="Services\IGameEngine.cs" />
+    <Compile Include="Services\IRepository.cs" />
     <Compile Include="Services\ISessionStateManager.cs" />
+    <Compile Include="Services\SqliteRepository.cs" />
     <Compile Include="ViewModels\BaseViewModel.cs" />
     <Compile Include="ViewModels\Enums.cs" />
     <Compile Include="ViewModels\GameSettingsViewModel.cs" />

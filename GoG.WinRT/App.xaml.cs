@@ -4,13 +4,10 @@ using System.Threading.Tasks;
 using Windows.ApplicationModel.Activation;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using GoG.Infrastructure.Engine;
 using GoG.WinRT.Services;
-using GoG.WinRT.ViewModels;
 using Microsoft.HockeyApp;
 using Microsoft.Practices.Unity;
 using Prism.Mvvm;
-using Prism.Unity.Windows;
 
 namespace GoG.WinRT
 {
@@ -99,24 +96,24 @@ namespace GoG.WinRT
             //var msg = $"Unhandled exception:\nType: {e.GetType().Name}\nMessage: {e.Message}";
         }
 
-        protected override void OnRegisterKnownTypesForSerialization()
-        {
-            base.OnRegisterKnownTypesForSerialization();
+        //protected override void OnRegisterKnownTypesForSerialization()
+        //{
+        //    base.OnRegisterKnownTypesForSerialization();
 
-            // These types are used in the game state.
-            SessionStateService.RegisterKnownType(typeof(GoGame));
-            SessionStateService.RegisterKnownType(typeof(GoPlayer));
-            SessionStateService.RegisterKnownType(typeof(PlayerType));
-            SessionStateService.RegisterKnownType(typeof(GoGameStatus));
-            SessionStateService.RegisterKnownType(typeof(GoColor));
-            SessionStateService.RegisterKnownType(typeof(MoveType));
-            SessionStateService.RegisterKnownType(typeof(GoOperation));
-            SessionStateService.RegisterKnownType(typeof(MoveType));
-            SessionStateService.RegisterKnownType(typeof(GoResultCode));
-            SessionStateService.RegisterKnownType(typeof(GoMoveHistoryItem));
-            SessionStateService.RegisterKnownType(typeof(GoMove));
-            SessionStateService.RegisterKnownType(typeof(GoMoveResult));
-        }
+        //    // These types are used in the game state.
+        //    //SessionStateService.RegisterKnownType(typeof(GoGame));
+        //    //SessionStateService.RegisterKnownType(typeof(GoPlayer));
+        //    //SessionStateService.RegisterKnownType(typeof(PlayerType));
+        //    //SessionStateService.RegisterKnownType(typeof(GoGameStatus));
+        //    //SessionStateService.RegisterKnownType(typeof(GoColor));
+        //    //SessionStateService.RegisterKnownType(typeof(MoveType));
+        //    //SessionStateService.RegisterKnownType(typeof(GoOperation));
+        //    //SessionStateService.RegisterKnownType(typeof(MoveType));
+        //    //SessionStateService.RegisterKnownType(typeof(GoResultCode));
+        //    //SessionStateService.RegisterKnownType(typeof(GoMoveHistoryItem));
+        //    //SessionStateService.RegisterKnownType(typeof(GoMove));
+        //    //SessionStateService.RegisterKnownType(typeof(GoMoveResult));
+        //}
 
         protected override void OnLaunched(LaunchActivatedEventArgs args)
         {
@@ -154,13 +151,14 @@ namespace GoG.WinRT
             // dependencies get injected by the container
             ViewModelLocationProvider.SetDefaultViewModelFactory(viewModelType => Resolve(viewModelType));
 
+            var repo = Container.Resolve<IRepository>();
+            repo.Initialize();
+
             return Task.FromResult<object>(null);
         }
         
         protected override object Resolve(Type type)
         {
-            if (!PrismUnityExtension.IsTypeRegistered(Container, type))
-                return null;
             var obj = Container.Resolve(type);
             return obj;
         }
@@ -168,13 +166,10 @@ namespace GoG.WinRT
         protected override void ConfigureContainer()
         {
             base.ConfigureContainer();
-            
-            // Register any app specific types with the container
-            Container.RegisterType(typeof(IGameEngine), typeof(FuegoGameEngine), new ContainerControlledLifetimeManager());
 
-            RegisterTypeIfMissing(typeof(MainPageViewModel), typeof(MainPageViewModel), true);
-            RegisterTypeIfMissing(typeof(SinglePlayerPageViewModel), typeof(SinglePlayerPageViewModel), true);
-            RegisterTypeIfMissing(typeof(GamePageViewModel), typeof(GamePageViewModel), true);            
+            // Register any app specific types with the container
+            Container.RegisterType<IRepository, SqliteRepository>(new ContainerControlledLifetimeManager());
+            Container.RegisterType<IGameEngine, FuegoGameEngine>(new ContainerControlledLifetimeManager());
         }
     }
 }

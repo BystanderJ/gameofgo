@@ -23,13 +23,16 @@ namespace GoG.WinRT.ViewModels
         #region Ctor
         public GamePageViewModel(INavigationService navigationService,
             ISessionStateService sessionStateService,
-            IGameEngine engine) : base(navigationService, sessionStateService, engine)
+            IGameEngine engine,
+            IRepository repository) : base(navigationService, sessionStateService, engine)
         {
+            _repository = repository;
         }
         #endregion Ctor
 
         #region Data
 
+        private readonly IRepository _repository;
         private GoColor? _savedColor;
         private string _hint;
         private PlayerViewModel[] _players;
@@ -42,10 +45,17 @@ namespace GoG.WinRT.ViewModels
 
         #region ShowingArea
         private bool _showingArea;
-        [RestorableState]
         public bool ShowingArea
         {
-            get => _showingArea; set => SetProperty(ref _showingArea, value);
+            get => _showingArea;
+            set
+            {
+                if (SetProperty(ref _showingArea, value))
+                {
+                    _activeGame.ShowingArea = value;
+                    SaveGame();
+                }
+            }
         }
         #endregion ShowingArea
 
@@ -304,7 +314,7 @@ namespace GoG.WinRT.ViewModels
                 AddMoveToHistory(resp.Move, resp.MoveResult);
                 //Pieces[resp.Move.Position].IsNewPiece = true;
                 RemoveCapturedPieces(resp);
-                CurrentPlayer.Prisoners += resp.MoveResult.CapturedStones.Split(' ').Count(x => x != String.Empty);
+                CurrentPlayer.Prisoners += resp.MoveResult.CapturedStones.Split(' ').Count(x => x != string.Empty);
                 Pieces[position].RaiseMultiplePropertiesChanged();
                 SwapTurns();
 
@@ -411,7 +421,9 @@ namespace GoG.WinRT.ViewModels
 
             if (resp.ResultCode == GoResultCode.Success)
             {
-                ContinueGameFromState(resp.GameState);
+                _activeGame = resp.GameState;
+
+                ContinueFromActiveGameState();
                 PlayCurrentUser();
 
                 //// Removes a resign or removes the last two moves, restoring any captured pieces and reducing
@@ -465,7 +477,7 @@ namespace GoG.WinRT.ViewModels
             RaiseCommandsChanged();
         }
 
-        public override async void OnNavigatedTo(NavigatedToEventArgs e, 
+        public override void OnNavigatedTo(NavigatedToEventArgs e, 
             Dictionary<string, object> viewModelState)
         {
             try
@@ -485,14 +497,6 @@ namespace GoG.WinRT.ViewModels
                     GoBackDeferred();
                     return;
                 }
-
-                var resp = await GameEngine.GetGameStateAsync(_activeGameId);
-                if (resp.ResultCode != GoResultCode.Success)
-                {
-                    GoBackDeferred();
-                    return;
-                }
-                _activeGame = resp.GameState;
                 
                 LoadGameFromEngineAsync("Syncronizing...");
             }
@@ -743,11 +747,6 @@ namespace GoG.WinRT.ViewModels
 
             if (AbortOperation)
                 return;
-
-            await GameEngine.CreateOrSyncToGameAsync(_activeGameId, _activeGame);
-
-            if (AbortOperation)
-                return;
             
             var resp = await GameEngine.GetGameStateAsync(_activeGameId);
             IsBusy = false;
@@ -760,7 +759,9 @@ namespace GoG.WinRT.ViewModels
 
             if (resp.ResultCode == GoResultCode.Success)
             {
-                ContinueGameFromState(resp.GameState);
+                _activeGame = resp.GameState;
+
+                ContinueFromActiveGameState();
 
                 // Reflect actual operation happening in engine and retry sync.
                 switch (resp.GameState.Operation)
@@ -811,39 +812,38 @@ namespace GoG.WinRT.ViewModels
                      });
         }
 
-        private void ContinueGameFromState(GoGame state)
+        private void ContinueFromActiveGameState()
         {
-            _activeGame = state;
+            ShowingArea = _activeGame.ShowingArea;
 
             // Player1 is always black, Player2 is always white.
-            Player1 = new PlayerViewModel(state.Player1, GoColor.Black);
-            Player2 = new PlayerViewModel(state.Player2, GoColor.White);
+            Player1 = new PlayerViewModel(_activeGame.Player1, GoColor.Black);
+            Player2 = new PlayerViewModel(_activeGame.Player2, GoColor.White);
 
             _players = new[] { Player1, Player2 };
 
-            WhoseTurn = state.WhoseTurn == GoColor.Black ? 0 : 1;
+            WhoseTurn = _activeGame.WhoseTurn == GoColor.Black ? 0 : 1;
             RaisePropertyChanged(nameof(WhoseTurn));
             CurrentTurnColor = _players[_whoseTurn].Color;
 
-            AdjustToState(state.Status, state.WinMargin);
+            AdjustToState(_activeGame.Status, _activeGame.WinMargin);
 
             // Note that setting BoardEdgeSize triggers the board control to generate.
-            BoardEdgeSize = state.Size;
+            BoardEdgeSize = _activeGame.Size;
 
             // Build a temporary dictionary with ALL the piece states in it, all set to
             // contain an empty PieceState initially.
             var tmpPieces = new Dictionary<string, PieceStateViewModel>();
-            for (int x = 0; x < state.Size; x++)
-                for (int y = 0; y < state.Size; y++)
+            for (int x = 0; x < _activeGame.Size; x++)
+                for (int y = 0; y < _activeGame.Size; y++)
                 {
-                    var position = EngineHelpers.DecodePosition(x, y, state.Size);
+                    var position = EngineHelpers.DecodePosition(x, y, _activeGame.Size);
                     tmpPieces.Add(position, new PieceStateViewModel(position, null, null, false, false, false));
                 }
 
             // This actually updates the UI.  Note that we can't add anything to Pieces after
             // this point because Pieces is a Dictionary, which can't be observed by the GameBoard
-            // control.  From here forward, we simply update individual pieces inside Pieces; we 
-            // don't add or remove from it.
+            // control.  From here forward, we simply update individual pieces.
             Pieces = tmpPieces;
 
             int blackPrisoners = 0;
@@ -851,21 +851,21 @@ namespace GoG.WinRT.ViewModels
 
             // Save history.
             History = new ObservableCollection<GoMoveHistoryItem>();
-            foreach (var h in state.GoMoveHistory)
+            foreach (var h in _activeGame.GoMoveHistory)
             {
                 History.Insert(0, h);
                 if (h.Move.Color == GoColor.Black)
-                    blackPrisoners += h.Result.CapturedStones.Split(' ').Count(x => x != String.Empty);
+                    blackPrisoners += h.Result.CapturedStones.Split(' ').Count(x => x != string.Empty);
                 else
-                    whitePrisoners += h.Result.CapturedStones.Split(' ').Count(x => x != String.Empty);
+                    whitePrisoners += h.Result.CapturedStones.Split(' ').Count(x => x != string.Empty);
             }
 
             Player1.Prisoners = Player1.Color == GoColor.Black ? blackPrisoners : whitePrisoners;
             Player2.Prisoners = Player2.Color == GoColor.Black ? blackPrisoners : whitePrisoners;
 
             // Set piece states for all the existing white and black pieces.
-            SetPieces(state.BlackPositions, GoColor.Black);
-            SetPieces(state.WhitePositions, GoColor.White);
+            SetPieces(_activeGame.BlackPositions, GoColor.Black);
+            SetPieces(_activeGame.WhitePositions, GoColor.White);
 
             var latestNormalPiece = GetLatestNormalMovePieceFromHistory();
             if (latestNormalPiece != null)
@@ -933,7 +933,10 @@ namespace GoG.WinRT.ViewModels
             }
         }
 
-
+        private void SaveGame()
+        {
+            _repository.UpdateGameAsync(_activeGame).Wait();
+        }
 
         #endregion Private
     }

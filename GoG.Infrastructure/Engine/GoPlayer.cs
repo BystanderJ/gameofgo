@@ -3,7 +3,8 @@
     
     public class GoPlayer
     {
-        
+        public int Id { get; set; }
+
         public string Name { get; set; }
         
         public PlayerType PlayerType { get; set; }

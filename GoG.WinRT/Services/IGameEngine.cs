@@ -9,7 +9,7 @@ namespace GoG.WinRT.Services
     {
         #region Fuego
         Task<GoGameStateResponse> GetGameStateAsync(Guid id);
-        Task<GoResponse> CreateOrSyncToGameAsync(Guid id, GoGame state);
+        Task<GoResponse> CreateGameAsync(GoGame state);
         Task<GoResponse> DeleteGameAsync(Guid id);
         Task<GoMoveResponse> PlayAsync(Guid id, GoMove move);
         Task<GoHintResponse> HintAsync(Guid id, GoColor color);
