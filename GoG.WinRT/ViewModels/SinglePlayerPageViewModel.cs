@@ -245,7 +245,7 @@ namespace GoG.WinRT.ViewModels
                     if (resp.ResultCode == GoResultCode.Success)
                     {
                         if (ActiveGame != Guid.Empty)
-                            await _repository.DeleteGameAsync(ActiveGame);
+                            await GameEngine.DeleteGameAsync(ActiveGame);
 
                         success = true;
                         ActiveGame = tmpState.Id;

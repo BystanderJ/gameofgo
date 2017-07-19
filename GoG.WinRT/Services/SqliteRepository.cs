@@ -78,9 +78,7 @@ namespace GoG.WinRT.Services
             {
                 using (var db = new GameContext())
                 {
-                    var game = await db.GoGame.FindAsync(id);
-                    db.GoGame.Remove(game);
-                    await db.SaveChangesAsync();
+                    await db.Database.ExecuteSqlCommandAsync($"DELETE FROM GoGame WHERE Id = \"{id}\";");
                 }
             }
             catch (JsonException jex)

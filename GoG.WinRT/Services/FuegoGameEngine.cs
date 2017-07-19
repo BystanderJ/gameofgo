@@ -85,9 +85,10 @@ namespace GoG.WinRT.Services
             await LoadState();
 
             if (_states.ContainsKey(id))
+            {
+                await _repository.DeleteGameAsync(id);
                 _states.Remove(id);
-
-            await SaveState();
+            }
 
             return new GoResponse(GoResultCode.Success);
         }
