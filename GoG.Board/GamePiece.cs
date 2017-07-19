@@ -1,17 +1,11 @@
-﻿using System;
-using FuegoLib;
-using System.Diagnostics;
-using Windows.UI.Xaml;
+﻿using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Shapes;
 using GoG.Infrastructure.Engine;
 
 namespace GoG.Board
 {
     public sealed class GamePiece : Button
     {
-        //private Grid _grid;
-
         // This constructor is included so Blend can instantiate the class.
 		public GamePiece()
         {
@@ -48,16 +42,26 @@ namespace GoG.Board
 
         // These properties are from the PieceState.
         public GoColor? Color { get; set; }
+        public GoColor? Territory { get; set; }
         public bool IsHint { get; set; }
         public bool IsLastMove { get; set; }
         public bool IsNewCapture { get; set; }
 
         private void OnLoaded(object sender, RoutedEventArgs routedEventArgs)
         {
-            UpdateVisualState();
+            UpdateVisualStateMainProperties();
+            UpdateVisualStateTerritory();
         }
 
-        internal void UpdateVisualState()
+        internal void UpdateVisualStateTerritory()
+        {
+            if (Territory == null)
+                VisualStateManager.GoToState(this, "NoTerritory", true);
+            else
+                VisualStateManager.GoToState(this, Territory.Value + "Territory", true);
+        }
+
+        internal void UpdateVisualStateMainProperties()
         {
             if (Color == null)
             {

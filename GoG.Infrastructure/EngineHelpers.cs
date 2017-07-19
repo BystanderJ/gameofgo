@@ -1,29 +1,43 @@
 ﻿using GoG.Infrastructure.Engine;
 using System;
+using System.Diagnostics;
 using System.Text;
+using GoG.Infrastructure.Services.Engine;
 
 namespace GoG.Infrastructure
 {
     public static class EngineHelpers
     {
+        public static Point EncodePosition(this string p, int edgeSize)
+        {
+            p.EncodePosition(edgeSize, out var x, out var y);
+            return new Point(x, y);
+        }
+
         /// <summary>
         /// Converts a Go position like A15 to a board point, which is indexed at 0 and the Y axis is inverted.
         /// </summary>
         /// <param name="p"></param>
+        /// <param name="edgeSize"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
         /// <returns></returns>
-        public static void EncodePosition(string p, int edgeSize, out int x, out int y)
+        public static void EncodePosition(this string p, int edgeSize, out int x, out int y)
         {
-            if (p == null) throw new ArgumentNullException("p");
+            if (p == null) throw new ArgumentNullException(nameof(p));
 
             try
             {
                 var firstCharArray = Encoding.UTF8.GetBytes(new[] { p[0] });
-                x = firstCharArray[0] - 64;
+                x = firstCharArray[0] - 65;
                 // I is skipped.
-                if (x > 8)
+                if (x >= 8)
                     x--;
                 var y2 = p.Substring(1);
                 y = edgeSize - Convert.ToInt32(y2);
+
+                Debug.Assert(x < edgeSize && y < edgeSize 
+                    && x >= 0 && y >= 0, $"{nameof(EncodePosition)}({p}) yielded out of bounds X:{x} Y:{y}");
             }
             catch (Exception)
             {
@@ -55,7 +69,7 @@ namespace GoG.Infrastructure
 
         public static string GetResultCodeFriendlyMessage(GoResultCode code)
         {
-            string msg = null;
+            string msg;
             switch (code)
             {
                 case GoResultCode.CommunicationError:
@@ -99,7 +113,7 @@ namespace GoG.Infrastructure
                 case GoResultCode.CannotScore:
                     msg = "There are one or more stones that may be dead (or not).  Please continue playing until this situation is resolved.";
                     break;
-                case GoResultCode.CannotSaveSGF:
+                case GoResultCode.CannotSaveSgf:
                     msg = "Cannot save SGF.";
                     break;
                 default:

@@ -73,60 +73,49 @@ namespace GoG.Infrastructure.Engine
         /// <summary>
         /// No error.
         /// </summary>
-        
         Success,
 
         /// <summary>
         /// Client side also generates these when there are connectivity errors, but 
         /// could be generated server side, too.
         /// </summary>
-        
         CommunicationError,
 
         /// <summary>
-        /// An error happened on the server that the client shouldn't know about.
+        /// An error happened that the client shouldn't know about.
         /// </summary>
-        
         InternalError,
 
         /// <summary>
         /// The GameId passed in doesn't exist (or doesn't belong to the current user).
         /// </summary>
-        
         GameDoesNotExist,
 
         /// <summary>
         /// The GameId passed in belongs to a game that already exists.
         /// </summary>
-        
         GameAlreadyExists,
 
         /// <summary>
         /// Game state between server and client does not match.  This usually means the client needs to correct the situation
         /// (or the client is trying to cheat).
         /// </summary>
-        
         ClientOutOfSync,
 
         /// <summary>
         /// Only one move or action can be performed for a single game at one time.  If multiple calls are made per game,
         /// they are rejected.
         /// </summary>
-        
         SimultaneousRequests,
         
         IllegalMoveSpaceOccupied,
-        
         IllegalMoveSuicide,
-        
         IllegalMoveSuperKo,
-        
         OtherIllegalMove,
 
         /// <summary>
         /// Other error output by the engine.
         /// </summary>
-        
         OtherEngineError,
 
         /// <summary>
@@ -135,7 +124,6 @@ namespace GoG.Infrastructure.Engine
         /// move requests.  Clients should simply show a busy signal for 5 seconds, then
         /// try again.
         /// </summary>
-        
         EngineBusy,
 
         /// <summary>
@@ -143,9 +131,8 @@ namespace GoG.Infrastructure.Engine
         /// to a very low number of "maximum simulated games" (used to limit its strength), but that's a guess.
         /// It's not clear how client client should handle this, so let's hope it doesn't happen too often.
         /// </summary>
-        
         CannotScore,
         
-        CannotSaveSGF
+        CannotSaveSgf
     }
 }

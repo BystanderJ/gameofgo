@@ -1,6 +1,4 @@
-﻿using System;
-using System.Runtime.Serialization;
-using GoG.Infrastructure.Engine;
+﻿using GoG.Infrastructure.Engine;
 
 namespace GoG.Infrastructure.Services.Engine
 {

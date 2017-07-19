@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using GoG.Infrastructure;
 using GoG.Infrastructure.Engine;
@@ -19,20 +20,24 @@ namespace GoG.WinRT.Services
     {
         #region Data
 
+        // After every operation, we use this to save the game's state to our database.
         private readonly IRepository _repository;
 
         // _fuego is the AI component, written in C++.  It uses threads, but it also
-        // hangs, so every time we call methods on it we must create a thread.
+        // becomes unresponsive during computation, so every time we call methods 
+        // on it we must create a thread.
         private FuegoInstance _fuego;
 
         // The current game.  If its Id does not match the desired state, must coerse the
-        // _fuego instance to the desired game then set _state to the new game.
+        // _fuego instance to the desired game state, then set _state to the new game.
         private GoGame _state;
 
         // The other games we might need to switch to.  The key is the GoGame.Id.
         private readonly Dictionary<Guid, GoGame> _states = new Dictionary<Guid, GoGame>();
 
+        // Used so that LoadState() will only happen once.
         private bool _isLoaded;
+
         #endregion Data
 
         #region Ctor
@@ -51,6 +56,8 @@ namespace GoG.WinRT.Services
                 Debug.Assert(state != null && state.Id != Guid.Empty, "state != null && state.Id != Guid.Empty");
 
                 await LoadState();
+
+                state.Created = DateTime.UtcNow;
 
                 if (!_states.ContainsKey(state.Id))
                     _states.Add(state.Id, state);
@@ -85,12 +92,24 @@ namespace GoG.WinRT.Services
             return new GoResponse(GoResultCode.Success);
         }
 
-        public async Task<GoGameStateResponse> GetGameStateAsync(Guid id)
+        public async Task<GoGameStateResponse> GetGameStateAsync(Guid id, bool loadGame = false)
         {
             await LoadState();
 
             if (!_states.TryGetValue(id, out var state))
                 return new GoGameStateResponse(GoResultCode.GameDoesNotExist, null);
+            try
+            {
+                await EnsureFuegoStartedAndMatchingGame(id);
+            }
+            catch (GoEngineException gex)
+            {
+                return new GoGameStateResponse(gex.Code, null);
+            }
+            catch (Exception)
+            {
+                return new GoGameStateResponse(GoResultCode.InternalError, null);
+            }
             return new GoGameStateResponse(GoResultCode.Success, state);
         }
 
@@ -359,6 +378,35 @@ namespace GoG.WinRT.Services
 
             Debug.Assert(rval != null, "rval != null");
             return rval;
+        }
+
+        public async Task<GoAreaResponse> GetArea(Guid id, bool active)
+        {
+            await LoadState();
+
+            if (!_states.TryGetValue(id, out var state))
+                return new GoAreaResponse(GoResultCode.GameDoesNotExist);
+
+            try
+            {
+                return await Task.Run(async () =>
+                {
+                    state.ShowingArea = active;
+                    await EnsureFuegoStartedAndMatchingGame(id);
+
+                    // Get dead stones.
+                    var dead = ParseResponse(WriteCommand("final_status_list", "dead"));
+                    return CalculateAreaValues(string.Join(" ", dead.Lines));
+                });
+            }
+            catch (GoEngineException gex)
+            {
+                return new GoAreaResponse(gex.Code);
+            }
+            catch (Exception)
+            {
+                return new GoAreaResponse(GoResultCode.InternalError);
+            }
         }
 
         #endregion Fuego Implementation
@@ -641,7 +689,7 @@ namespace GoG.WinRT.Services
                     return;
 
                 _state = state;
-                
+
                 Debug.Assert(
                     _states.ContainsKey(_state.Id) &&
                     _states[_state.Id] == _state,
@@ -708,6 +756,122 @@ namespace GoG.WinRT.Services
             });
         }
 
+        private GoAreaResponse CalculateAreaValues(string dead)
+        {
+            var rval = new GoAreaResponse(GoResultCode.Success);
+
+            // Split into arrays, and work out dead/undead white and black subsets.
+            var deads = dead.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            var blacks = _state.BlackPositions.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            rval.BlackDead = deads.Where(d => blacks.Any(b => b == d)).ToList();
+            var nonDeadBlacks = blacks.Where(b => deads.All(p => p != b)).Select(p => p.EncodePosition(_state.Size)).ToArray();
+            var whites = _state.WhitePositions.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            rval.WhiteDead = deads.Where(d => whites.Any(w => w == d)).ToList();
+            var nonDeadWhites = whites.Where(w => deads.All(p => p != w)).Select(p => p.EncodePosition(_state.Size)).ToArray();
+            
+            // Build game grid based on _state.BlackPositions and _state.WhitePositions,
+            // excluding any dead stones.
+            var grid = new GoColor?[_state.Size, _state.Size];
+            foreach (var p in nonDeadWhites)
+                grid[p.X, p.Y] = GoColor.White;
+            foreach (var p in nonDeadBlacks)
+                grid[p.X, p.Y] = GoColor.Black;
+
+            // For each held position, determine the number of neighboring liberties
+            // that are empty and don't eventually touch a different color.
+            rval.BlackArea = GetContiguousAreaForHeldPoints(GoColor.Black, nonDeadBlacks);
+
+            rval.WhiteArea = GetContiguousAreaForHeldPoints(GoColor.White, nonDeadWhites);
+            
+            List<string> GetContiguousAreaForHeldPoints(GoColor color, Point[] heldPoints)
+            {
+                var result = new List<string>(_state.Size ^ 2);
+
+                foreach (var held in heldPoints)
+                {
+                    foreach (var p in GetNeighborPositions(held))
+                    {
+                        // If is a liberty (no color), traverse it.
+                        if (grid[p.X, p.Y] == null)
+                        {
+                            Debug.Assert(grid[held.X, held.Y].HasValue, "grid[held.X, held.Y].HasValue");
+
+                            var liberties = new List<Point>(_state.Size ^ 2);
+                            if (!AllNeighborsAreLibertiesOrColor(p, color, liberties))
+                                continue;
+                            foreach (var l in liberties)
+                            {
+                                var s = EngineHelpers.DecodePosition(l.X, l.Y, _state.Size);
+                                if (!result.Contains(s))
+                                    result.Add(s);
+                            }
+                        }
+                    }
+
+                    // Add held point (which is by definition alive) because want 
+                    // area not just territory.
+                    var heldDecoded = EngineHelpers.DecodePosition(held.X, held.Y, _state.Size);
+                    if (!result.Contains(heldDecoded))
+                        result.Add(heldDecoded);
+                }
+                
+                return result;
+            }
+
+            bool AllNeighborsAreLibertiesOrColor(Point point, GoColor color, List<Point> visited)
+            {
+                visited.Add(point);
+
+                // Traverse through not already visited neighbors.
+                foreach (var neighbor in GetNeighborPositions(point))
+                {
+                    if (visited.Contains(neighbor))
+                        continue;
+                    
+                    var neighborColor = grid[neighbor.X, neighbor.Y];
+
+                    // If neighbors is a liberty (no color), traverse it.
+                    if (neighborColor == null)
+                    {
+                        if (!AllNeighborsAreLibertiesOrColor(neighbor, color, visited))
+                            // A neighbor was opposite color, abort up the chain.
+                            return false;
+                    }
+                    else if (neighborColor == OppositeColor(color))
+                    {
+                        // Neighbor is opposite color, abort all the way up the chain.
+                        return false;
+                    }
+                    // ReSharper disable once RedundantIfElseBlock
+                    else
+                    {
+                        // Neighbor is same color, this is a boundary, don't traverse it
+                        // but continue to next neighbor.
+                    }
+                }
+                return true;
+            }
+
+            IEnumerable<Point> GetNeighborPositions(Point p)
+            {
+                if (p.X > 0)
+                    yield return new Point(p.X - 1, p.Y);
+                if (p.X < _state.Size - 1)
+                    yield return new Point(p.X + 1, p.Y);
+                if (p.Y > 0)
+                    yield return (new Point(p.X, p.Y - 1));
+                if (p.Y < _state.Size - 1)
+                    yield return new Point(p.X, p.Y + 1);
+            }
+            
+            return rval;
+        }
+
+        private static GoColor OppositeColor(GoColor color)
+        {
+            return color == GoColor.Black ? GoColor.White : GoColor.Black;
+        }
+        
         #endregion Private Helpers
     }
 }

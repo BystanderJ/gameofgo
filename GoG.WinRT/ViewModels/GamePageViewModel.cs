@@ -23,16 +23,14 @@ namespace GoG.WinRT.ViewModels
         #region Ctor
         public GamePageViewModel(INavigationService navigationService,
             ISessionStateService sessionStateService,
-            IGameEngine engine,
-            IRepository repository) : base(navigationService, sessionStateService, engine)
+            IGameEngine engine)
+            : base(navigationService, sessionStateService, engine)
         {
-            _repository = repository;
         }
         #endregion Ctor
 
         #region Data
 
-        private readonly IRepository _repository;
         private GoColor? _savedColor;
         private string _hint;
         private PlayerViewModel[] _players;
@@ -48,15 +46,9 @@ namespace GoG.WinRT.ViewModels
         public bool ShowingArea
         {
             get => _showingArea;
-            set
-            {
-                if (SetProperty(ref _showingArea, value))
-                {
-                    _activeGame.ShowingArea = value;
-                    SaveGame();
-                }
-            }
+            set => SetProperty(ref _showingArea, value);
         }
+
         #endregion ShowingArea
 
         #region MessageText
@@ -73,7 +65,7 @@ namespace GoG.WinRT.ViewModels
             }
         }
         #endregion Message
-        
+
         #region Status
         private GoGameStatus _status;
         public GoGameStatus Status
@@ -138,7 +130,6 @@ namespace GoG.WinRT.ViewModels
 
         #region CurrentPlayer
         public PlayerViewModel CurrentPlayer => _players[WhoseTurn];
-
         #endregion CurrentPlayer
 
         #region Player1
@@ -165,13 +156,11 @@ namespace GoG.WinRT.ViewModels
         #endregion Methods
 
         #region Commands
-        
+
         #region GetHintCommand
         DelegateCommand _getHintCommand;
-        public DelegateCommand GetHintCommand
-        {
-            get { if (_getHintCommand == null) _getHintCommand = new DelegateCommand(ExecuteGetHint, CanGetHint); return _getHintCommand; }
-        }
+        public DelegateCommand GetHintCommand => _getHintCommand ?? (_getHintCommand = new DelegateCommand(ExecuteGetHint, CanGetHint));
+
         public bool CanGetHint()
         {
             return IsBusy == false && Status == GoGameStatus.Active;
@@ -208,7 +197,7 @@ namespace GoG.WinRT.ViewModels
 
             RaiseCommandsChanged();
         }
-        
+
         private async Task InvokeFleetingMessage(string msg, int delayMilliseconds)
         {
             MessageText = msg;
@@ -344,10 +333,8 @@ namespace GoG.WinRT.ViewModels
 
         #region ResignCommand
         DelegateCommand _resignCommand;
-        public DelegateCommand ResignCommand
-        {
-            get { if (_resignCommand == null) _resignCommand = new DelegateCommand(ExecuteResign, CanResign); return _resignCommand; }
-        }
+        public DelegateCommand ResignCommand => _resignCommand ?? (_resignCommand = new DelegateCommand(ExecuteResign, CanResign));
+
         public bool CanResign()
         {
             return IsBusy == false &&
@@ -387,10 +374,8 @@ namespace GoG.WinRT.ViewModels
 
         #region UndoCommand
         DelegateCommand _undoCommand;
-        public DelegateCommand UndoCommand
-        {
-            get { if (_undoCommand == null) _undoCommand = new DelegateCommand(ExecuteUndo, CanUndo); return _undoCommand; }
-        }
+        public DelegateCommand UndoCommand => _undoCommand ?? (_undoCommand = new DelegateCommand(ExecuteUndo, CanUndo));
+
         public bool CanUndo()
         {
             if (_player1 == null || _player2 == null)
@@ -429,7 +414,7 @@ namespace GoG.WinRT.ViewModels
                 //// Removes a resign or removes the last two moves, restoring any captured pieces and reducing
                 //// prisoner count as necessary.
                 //UndoMovesFromHistory();
-                
+
                 //// When we end a game, we set the victor to be the current turn so his/her ball
                 //// will bounce.  To undo this, we set the active turn to the human player.
                 //if (Status != GoGameStatus.Active)
@@ -450,24 +435,32 @@ namespace GoG.WinRT.ViewModels
 
         #region ShowAreaCommand
         DelegateCommand _showAreaCommand;
-        public DelegateCommand ShowAreaCommand
-        {
-            get { if (_showAreaCommand == null) _showAreaCommand = new DelegateCommand(ExecuteShowArea, CanShowArea); return _showAreaCommand; }
-        }
+        public DelegateCommand ShowAreaCommand => _showAreaCommand ?? (_showAreaCommand = new DelegateCommand(ExecuteShowArea, CanShowArea));
+
         public bool CanShowArea()
         {
             if (_player1 == null || _player2 == null)
                 return false;
             return true;
         }
-        public void ExecuteShowArea()
+        public async void ExecuteShowArea()
         {
             ShowingArea = !ShowingArea;
-            
-            RaiseCommandsChanged();
+
+            if (!ShowingArea)
+            {
+                ClearArea();
+                return;
+            }
+
+            DisplayMessage("Area Calculation",
+                "This will calculate area after every move, if possible.\n\nIf not possible (or turned off), the area will be cleared and the running scores will not show Area.").Forget();
+
+            await CalculateArea();
         }
+
         #endregion ShowAreaCommand
-        
+
         #endregion Commands
 
         #region Virtuals
@@ -477,7 +470,7 @@ namespace GoG.WinRT.ViewModels
             RaiseCommandsChanged();
         }
 
-        public override void OnNavigatedTo(NavigatedToEventArgs e, 
+        public override void OnNavigatedTo(NavigatedToEventArgs e,
             Dictionary<string, object> viewModelState)
         {
             try
@@ -485,7 +478,7 @@ namespace GoG.WinRT.ViewModels
                 AbortOperation = false;
 
                 base.OnNavigatedTo(e, viewModelState);
-                
+
                 if (e.Parameter is Guid)
                 {
                     // Resume a single player game using the navigation parameter sent in.
@@ -497,7 +490,7 @@ namespace GoG.WinRT.ViewModels
                     GoBackDeferred();
                     return;
                 }
-                
+
                 LoadGameFromEngineAsync("Syncronizing...");
             }
             catch (Exception)
@@ -505,7 +498,7 @@ namespace GoG.WinRT.ViewModels
                 throw;
             }
         }
-        
+
         #endregion Virtuals
 
         #region Private
@@ -655,7 +648,7 @@ namespace GoG.WinRT.ViewModels
         //        int count = 2;
         //        if (History.Count % 2 == 1)
         //            count = 1;
-                
+
         //        // Pop off the top move.
         //        for (int i = 0; i < count; i++)
         //        {
@@ -747,13 +740,13 @@ namespace GoG.WinRT.ViewModels
 
             if (AbortOperation)
                 return;
-            
+
             var resp = await GameEngine.GetGameStateAsync(_activeGameId);
             IsBusy = false;
             MessageText = null;
 
             Debug.Assert(resp != null, "resp != null");
-            
+
             if (AbortOperation)
                 return;
 
@@ -783,7 +776,7 @@ namespace GoG.WinRT.ViewModels
                         {
                             AdjustToState(resp.GameState.Status, resp.GameState.WinMargin);
                             if (Status == GoGameStatus.Active)
-                                    PlayCurrentUser();
+                                PlayCurrentUser();
                         });
                         break;
                 }
@@ -882,7 +875,7 @@ namespace GoG.WinRT.ViewModels
         private void AdjustToState(GoGameStatus status, decimal margin)
         {
             Status = status;
-            
+
             var humanPlayer = Player1.PlayerType == PlayerType.Human ? Player1 : Player2;
             var aiPlayer = Player1.PlayerType == PlayerType.Human ? Player2 : Player1;
 
@@ -918,14 +911,13 @@ namespace GoG.WinRT.ViewModels
         private void SetPieces(string p, GoColor goColor)
         {
             var split = p.Split(' ');
-            for (int index = 0; index < split.Length; index++)
+            foreach (var pos in split)
             {
-                var pos = split[index];
-                if (!String.IsNullOrWhiteSpace(pos) && Pieces.ContainsKey(pos))
+                if (!string.IsNullOrWhiteSpace(pos) && Pieces.ContainsKey(pos))
                 {
                     Pieces[pos].Color = goColor;
                 }
-                else if (!String.IsNullOrWhiteSpace(pos))
+                else if (!string.IsNullOrWhiteSpace(pos))
                 {
                     // Can't set the sequence yet because index is not the correct value.
                     Pieces.Add(pos, new PieceStateViewModel(pos, null, goColor, false, false, false));
@@ -933,9 +925,50 @@ namespace GoG.WinRT.ViewModels
             }
         }
 
-        private void SaveGame()
+        private async Task CalculateArea()
         {
-            _repository.UpdateGameAsync(_activeGame).Wait();
+            try
+            {
+                MessageText = "Calculating...";
+                IsBusy = true;
+                var areaResponse = await GameEngine.GetArea(_activeGameId, ShowingArea);
+                if (areaResponse.ResultCode != GoResultCode.Success)
+                {
+                    ClearArea();
+                    return;
+                }
+
+                foreach (var p in Pieces.Keys)
+                {
+
+                    if (areaResponse.BlackArea.Contains(p) ||
+                        areaResponse.WhiteDead.Contains(p))
+                        Pieces[p].Territory = GoColor.Black;
+                    else if (areaResponse.WhiteArea.Contains(p) ||
+                             areaResponse.BlackDead.Contains(p) ||
+                             Pieces[p].Color == GoColor.White)
+                        Pieces[p].Territory = GoColor.White;
+                    else
+                        Pieces[p].Territory = null;
+                }
+            }
+#pragma warning disable 168
+            catch (Exception ex)
+#pragma warning restore 168
+            {
+                ClearArea();
+            }
+            finally
+            {
+                IsBusy = false;
+                MessageText = null;
+            }
+        }
+
+        private void ClearArea()
+        {
+            foreach (var p in Pieces.Values)
+                p.Territory = null;
         }
 
         #endregion Private

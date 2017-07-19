@@ -297,8 +297,7 @@ namespace GoG.Board
                     gamePiece.SetValue(Grid.RowSpanProperty, 2);
 
                     gamePiece.Click += GamePieceOnClick;
-
-
+                    
                     _pieces[DecodePosition(new Point(column, row))] = gamePiece;
 
                     _gridContainer.Children.Add(gamePiece);
@@ -366,7 +365,10 @@ namespace GoG.Board
         public void FixPieces()
         {
             foreach (GamePiece p in _gridContainer.Children.Where(piece => piece is GamePiece))
-                p.UpdateVisualState();
+            {
+                p.UpdateVisualStateMainProperties();
+                p.UpdateVisualStateTerritory();
+            }
         }
 
         private void GamePieceOnClick(object sender, RoutedEventArgs routedEventArgs)
@@ -442,7 +444,10 @@ namespace GoG.Board
                 var oldPieces = e.OldValue as Dictionary<string, PieceStateViewModel>;
                 Debug.Assert(oldPieces != null);
                 foreach (var piece in oldPieces.Values)
+                {
                     piece.MultiplePropertiesChanged -= board.piece_MultiplePropertiesChanged;
+                    piece.TerritoryChanged -= board.piece_TerritoryChanged;
+                }
             }
 
             board.AttemptLinkToPieces();
@@ -460,6 +465,7 @@ namespace GoG.Board
             foreach (var piece in Pieces.Values)
             {
                 piece.MultiplePropertiesChanged -= piece_MultiplePropertiesChanged;
+                piece.TerritoryChanged -= piece_TerritoryChanged;
             }
 
             // This allows us to respond to changes in each individual piece 
@@ -468,9 +474,23 @@ namespace GoG.Board
             {
                 // Set the initial state on the control.
                 piece_MultiplePropertiesChanged(piece, null);
+                piece_TerritoryChanged(piece, null);
                 // Respond to future updates.
                 piece.MultiplePropertiesChanged += piece_MultiplePropertiesChanged;
+                piece.TerritoryChanged += piece_TerritoryChanged;
             }
+        }
+
+        void piece_TerritoryChanged(object sender, EventArgs args)
+        {
+            var piece = (PieceStateViewModel)sender;
+
+            // Get and update the UI control.
+            var ctl = _pieces[piece.Position];
+            Debug.Assert(ctl != null, "ctl was null");
+            ctl.Territory = piece.Territory;
+            
+            ctl.UpdateVisualStateTerritory();
         }
 
         void piece_MultiplePropertiesChanged(object sender, EventArgs args)
@@ -485,8 +505,8 @@ namespace GoG.Board
             ctl.IsHint = piece.IsHint;
             ctl.IsLastMove = piece.IsNewPiece;
             ctl.IsNewCapture = piece.IsNewCapture;
-
-            ctl.UpdateVisualState();
+            
+            ctl.UpdateVisualStateMainProperties();
         }
 
         #region CurrentPointerPosition

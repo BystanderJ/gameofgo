@@ -18,9 +18,10 @@ namespace GoG.Board
         }
 
         public event EventHandler MultiplePropertiesChanged;
+        public event EventHandler TerritoryChanged;
 
         readonly string _position;
-        public string Position 
+        public string Position
         {
             get { return _position; }
         }
@@ -35,6 +36,17 @@ namespace GoG.Board
         public GoColor? Color
         {
             get => _color; set => SetProperty(ref _color, value);
+        }
+
+        GoColor? _territory;
+        public GoColor? Territory
+        {
+            get => _territory;
+            set
+            {
+                if (SetProperty(ref _territory, value))
+                    TerritoryChanged?.Invoke(this, null);
+            }
         }
 
         bool _isHint;

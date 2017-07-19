@@ -13,7 +13,7 @@ namespace GoG.Infrastructure.Engine
         /// </summary>
         public GoGame()
         {
-            Created = DateTime.UtcNow;
+            
         }
 
         public GoGame(
