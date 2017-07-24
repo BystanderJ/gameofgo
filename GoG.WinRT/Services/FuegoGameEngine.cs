@@ -140,7 +140,19 @@ namespace GoG.WinRT.Services
                             //    return;
                             //}
 
-                            var result = ParseResponse(WriteCommand("genmove", color == GoColor.Black ? "black" : "white"));
+                            // Using kgs-genmove_cleanup for AI is important because
+                            // it will allow the final_status_list dead to be calculated
+                            // properly more often.
+                            //
+                            // This command captures the more obvious dead
+                            // stones before passing, though contrary to documentation
+                            // it does not capture ALL dead stones.
+                            // 
+                            // Using just "genmove" will more often generate PASS prematurely
+                            // because it guesses too much about dead stones.  Similarly,
+                            // "genmove" causes "final_status_list dead" to more often
+                            // generate strange results.
+                            var result = ParseResponse(WriteCommand("kgs-genmove_cleanup", color == GoColor.Black ? "black" : "white"));
 
                             GoMove newMove;
                             switch (result.Msg)
@@ -263,6 +275,10 @@ namespace GoG.WinRT.Services
 
                         _state.Operation = GoOperation.Hint;
 
+                        // Remove limitation so we can get a good hint, even on lower
+                        // difficulty levels.
+                        SetDifficulty(true);
+
                         var result =
                             ParseResponse(WriteCommand("reg_genmove", color == GoColor.Black ? "black" : "white"));
 
@@ -294,6 +310,18 @@ namespace GoG.WinRT.Services
             {
                 rval = new GoHintResponse(GoResultCode.InternalError, null);
             }
+            finally
+            {
+                try
+                {
+                    // Reset to configured difficulty level.
+                    SetDifficulty();
+                }
+                catch (Exception)
+                {
+                    // ignored
+                }
+            }
 
             Debug.Assert(rval != null, "rval != null");
             return rval;
@@ -318,7 +346,17 @@ namespace GoG.WinRT.Services
 
                         int undo = 0;
 
-                        if (_state.Status == GoGameStatus.BlackWonDueToResignation)
+                        if (_state.Status == GoGameStatus.Ended)
+                        {
+                            // GenMoveAsync() records the last PASS move, but it UNDOES the last generated PASS
+                            // in our _fuego instance so that final_status_list dead will still reliably
+                            // calculate dead stones (by simulation).
+                            // Therefore, if status is Ended, we only need to remove one _fuege move
+                            // while popping two items off of GoMoveHistory.
+                            undo = 2;
+                            ParseResponse(WriteCommand("gg-undo", "1"));
+                        }
+                        else if (_state.Status == GoGameStatus.BlackWonDueToResignation)
                         {
                             var humanColor = _state.Player1.PlayerType == PlayerType.Human ? GoColor.Black : GoColor.White;
                             undo = humanColor == GoColor.Black ? 2 : 1;
@@ -381,23 +419,26 @@ namespace GoG.WinRT.Services
             return rval;
         }
 
-        public async Task<GoAreaResponse> GetArea(Guid id, bool active)
+        public async Task<GoAreaResponse> GetArea(Guid id, bool estimateDead)
         {
             await LoadState();
 
-            if (!_states.TryGetValue(id, out var state))
+            if (!_states.ContainsKey(id))
                 return new GoAreaResponse(GoResultCode.GameDoesNotExist);
-
             try
             {
                 return await Task.Run(async () =>
                 {
-                    state.ShowingArea = active;
+
                     await EnsureFuegoStartedAndMatchingGame(id);
 
                     // Get dead stones.
-                    var dead = ParseResponse(WriteCommand("final_status_list", "dead"));
-                    return CalculateAreaValues(string.Join(" ", dead.Lines));
+                    if (estimateDead)
+                    {
+                        var dead = ParseResponse(WriteCommand("final_status_list", "dead"));
+                        return CalculateAreaValues(string.Join(" ", dead.Lines));
+                    }
+                    return CalculateAreaValues(string.Join(" ", new string[0]));
                 });
             }
             catch (GoEngineException gex)
@@ -433,7 +474,6 @@ namespace GoG.WinRT.Services
                 if (moves % 2 == 1)
                     _state.WhoseTurn = _state.WhoseTurn == GoColor.Black ? GoColor.White : GoColor.Black;
 
-                _state.WinMargin = 0;
                 _state.Status = GoGameStatus.Active;
             }
             catch (Exception)
@@ -625,21 +665,21 @@ namespace GoG.WinRT.Services
                             : GoGameStatus.BlackWonDueToResignation;
                         break;
                     case MoveType.Pass:
-                        // If previous move was a pass also, calculate winner.
+                        // If previous move was a pass also, mark end game, but don't record
+                        // the game in the _fuego instance so that the end game 
+                        // dead stone calculation will still work properly.
                         var moveCount = _state.GoMoveHistory.Count;
-                        bool previousMoveWasPass = moveCount >= 2 &&
-                                                    _state.GoMoveHistory[moveCount - 2].Move.MoveType == MoveType.Pass;
+                        var previousMoveWasPass = moveCount >= 2 &&
+                                                  _state.GoMoveHistory[moveCount - 2].Move.MoveType == MoveType.Pass;
                         if (previousMoveWasPass)
                         {
-                            var gameResult2 = CalculateGameResult();
-                            _state.WinMargin = decimal.Parse(gameResult2.Substring(1));
-                            _state.Status = gameResult2.StartsWith("B") ? GoGameStatus.BlackWon : GoGameStatus.WhiteWon;
+                            _state.Status = GoGameStatus.Ended;
+                            ParseResponse(WriteCommand("gg-undo", "1"));
                         }
                         break;
                 }
 
                 rval.Status = _state.Status;
-                rval.WinMargin = _state.WinMargin;
             }
             catch (Exception)
             {
@@ -661,12 +701,12 @@ namespace GoG.WinRT.Services
             _state.WhitePositions = result.Msg;
         }
 
-        private string CalculateGameResult()
-        {
-            var result = ParseResponse(WriteCommand("final_score"));
+        //private string CalculateGameResult()
+        //{
+        //    var result = ParseResponse(WriteCommand("final_score"));
 
-            return result.Msg;
-        }
+        //    return result.Msg;
+        //}
 
         private async Task EnsureFuegoStartedAndMatchingGame(Guid id)
         {
@@ -698,33 +738,11 @@ namespace GoG.WinRT.Services
 
                 _fuego.StartGame(_state.Size);
 
-                var level = _state.Player1.PlayerType == PlayerType.AI
-                    ? _state.Player1.Level
-                    : _state.Player2.Level;
-
                 // Set up parameters and clear board.
                 //await WriteCommand("uct_max_memory", (1024 * 1024 * 250).ToString());
 
-                if (level < 3)
-                {
-                    ParseResponse(WriteCommand("uct_param_player max_games",
-                        ((level + 1) * 5).ToString(CultureInfo.InvariantCulture)));
-                }
-                else if (level < 6)
-                {
-                    ParseResponse(WriteCommand("uct_param_player max_games",
-                        (level * 100).ToString(CultureInfo.InvariantCulture)));
-                }
-                else if (level < 9)
-                {
-                    ParseResponse(WriteCommand("uct_param_player max_games",
-                        (level * 1000).ToString(CultureInfo.InvariantCulture)));
-                }
-                else
-                {
-                    ParseResponse(WriteCommand("uct_param_player max_games",
-                        int.MaxValue.ToString(CultureInfo.InvariantCulture)));
-                }
+
+                SetDifficulty();
 
                 ParseResponse(WriteCommand("komi", _state.Player2.Komi.ToString(CultureInfo.InvariantCulture)));
                 ParseResponse(WriteCommand("clear_board"));
@@ -757,6 +775,27 @@ namespace GoG.WinRT.Services
             });
         }
 
+        private void SetDifficulty(bool removeLimit = false)
+        {
+            var level = _state.Player1.PlayerType == PlayerType.Ai
+                ? _state.Player1.Level
+                : _state.Player2.Level;
+
+            if (!removeLimit && level < 9)
+            {
+                var maxGames = Math.Round(Math.Pow(level + 1, 4.3)) + 2;
+                ParseResponse(WriteCommand("uct_param_player max_games",
+                    maxGames.ToString(CultureInfo.InvariantCulture)));
+            }
+            else
+            {
+                // No limitation for hardest level.
+                // No limitation is also used when generating hints.
+                ParseResponse(WriteCommand("uct_param_player max_games",
+                    int.MaxValue.ToString(CultureInfo.InvariantCulture)));
+            }
+        }
+
         private GoAreaResponse CalculateAreaValues(string dead)
         {
             var rval = new GoAreaResponse(GoResultCode.Success);
@@ -769,7 +808,7 @@ namespace GoG.WinRT.Services
             var whites = _state.WhitePositions.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             rval.WhiteDead = deads.Where(d => whites.Any(w => w == d)).ToList();
             var nonDeadWhites = whites.Where(w => deads.All(p => p != w)).Select(p => p.EncodePosition(_state.Size)).ToArray();
-            
+
             // Build game grid based on _state.BlackPositions and _state.WhitePositions,
             // excluding any dead stones.
             var grid = new GoColor?[_state.Size, _state.Size];
@@ -781,9 +820,8 @@ namespace GoG.WinRT.Services
             // For each held position, determine the number of neighboring liberties
             // that are empty and don't eventually touch a different color.
             rval.BlackArea = GetContiguousAreaForHeldPoints(GoColor.Black, nonDeadBlacks);
-
             rval.WhiteArea = GetContiguousAreaForHeldPoints(GoColor.White, nonDeadWhites);
-            
+
             List<string> GetContiguousAreaForHeldPoints(GoColor color, Point[] heldPoints)
             {
                 var result = new List<string>(_state.Size ^ 2);
@@ -815,7 +853,7 @@ namespace GoG.WinRT.Services
                     if (!result.Contains(heldDecoded))
                         result.Add(heldDecoded);
                 }
-                
+
                 return result;
             }
 
@@ -828,7 +866,7 @@ namespace GoG.WinRT.Services
                 {
                     if (visited.Contains(neighbor))
                         continue;
-                    
+
                     var neighborColor = grid[neighbor.X, neighbor.Y];
 
                     // If neighbors is a liberty (no color), traverse it.
@@ -843,12 +881,9 @@ namespace GoG.WinRT.Services
                         // Neighbor is opposite color, abort all the way up the chain.
                         return false;
                     }
-                    // ReSharper disable once RedundantIfElseBlock
-                    else
-                    {
-                        // Neighbor is same color, this is a boundary, don't traverse it
-                        // but continue to next neighbor.
-                    }
+
+                    // Neighbor is same color, this is a boundary, don't traverse it
+                    // but continue to next neighbor.
                 }
                 return true;
             }
@@ -864,7 +899,7 @@ namespace GoG.WinRT.Services
                 if (p.Y < _state.Size - 1)
                     yield return new Point(p.X, p.Y + 1);
             }
-            
+
             return rval;
         }
 
@@ -872,7 +907,7 @@ namespace GoG.WinRT.Services
         {
             return color == GoColor.Black ? GoColor.White : GoColor.Black;
         }
-        
+
         #endregion Private Helpers
     }
 }

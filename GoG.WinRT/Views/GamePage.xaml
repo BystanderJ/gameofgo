@@ -432,7 +432,7 @@
             </Grid>
         </Grid>
 
-        <!--  Show Areas  -->
+        <!--  Estimate Dead and Show Area  -->
         <StackPanel
             Grid.Row="4"
             Grid.Column="0"
@@ -440,7 +440,13 @@
             HorizontalAlignment="Right"
             Orientation="Horizontal">
             <Button
+                Command="{Binding EstimateDeadCommand}"
+                Content="Estimate Dead Stones"
+                IsTabStop="False" />
+
+            <Button
                 Width="100"
+                Margin="10,0,0,0"
                 Command="{Binding ShowAreaCommand}"
                 Content="Show Area"
                 IsTabStop="False"
@@ -448,6 +454,7 @@
 
             <Button
                 Width="100"
+                Margin="10,0,0,0"
                 Command="{Binding ShowAreaCommand}"
                 Content="Hide Area"
                 IsTabStop="False"

@@ -113,7 +113,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="local:GamePiece">
                     <Grid Background="#01000000">
-                        <Border x:Name="TerritoryBorder">
+                        <Border x:Name="TerritoryBorder" Margin="2">
                             <Border.Background>
                                 <SolidColorBrush Color="Transparent" />
                             </Border.Background>
@@ -317,7 +317,7 @@
                                                 <DiscreteObjectKeyFrame.Value>
                                                     <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
                                                         <GradientStop Offset="0.25" Color="White" />
-                                                        <GradientStop Offset="0.993" Color="#FFCBCBCB" />
+                                                        <GradientStop Offset="0.993" Color="#454545" />
                                                     </LinearGradientBrush>
                                                 </DiscreteObjectKeyFrame.Value>
                                             </DiscreteObjectKeyFrame>
@@ -356,7 +356,7 @@
                                                 <DiscreteObjectKeyFrame.Value>
                                                     <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
                                                         <GradientStop Offset="0.25" Color="White" />
-                                                        <GradientStop Offset="0.993" Color="#FFCBCBCB" />
+                                                        <GradientStop Offset="0.993" Color="#454545" />
                                                     </LinearGradientBrush>
                                                 </DiscreteObjectKeyFrame.Value>
                                             </DiscreteObjectKeyFrame>
@@ -480,14 +480,22 @@
                             </VisualStateGroup>
 
                             <VisualStateGroup x:Name="TerritoryGroup">
-                                <VisualState x:Name="NoTerritory" />
+                                <VisualState x:Name="NoTerritory">
+                                    <Storyboard>
+                                        <ColorAnimation
+                                            Storyboard.TargetName="TerritoryBorder"
+                                            Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                            To="Transparent"
+                                            Duration="0:0:0.5" />
+                                    </Storyboard>
+                                </VisualState>
                                 <VisualState x:Name="BlackTerritory">
                                     <Storyboard>
                                         <ColorAnimation
                                             Storyboard.TargetName="TerritoryBorder"
                                             Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
-                                            To="#81191919"
-                                            Duration="0:0:1" />
+                                            To="#35191919"
+                                            Duration="0:0:0.5" />
                                     </Storyboard>
                                 </VisualState>
                                 <VisualState x:Name="WhiteTerritory">
@@ -495,8 +503,8 @@
                                         <ColorAnimation
                                             Storyboard.TargetName="TerritoryBorder"
                                             Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
-                                            To="#81FFFFFF"
-                                            Duration="0:0:1" />
+                                            To="#35FFFFFF"
+                                            Duration="0:0:0.5" />
                                     </Storyboard>
                                 </VisualState>
 

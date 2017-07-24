@@ -67,17 +67,40 @@ namespace GoG.WinRT.ViewModels
                     RaisePropertyChanged(nameof(Score));
             }
         }
-
-        public decimal Score => _komi + _prisoners + _area;
-
-        private int _prisoners;
-        public int Prisoners
+        
+        #region Captured
+        private int _captured;
+        public int Captured
         {
-            get => _prisoners; set
+            get => _captured;
+            set
             {
-                if (SetProperty(ref _prisoners, value))
+                if (SetProperty(ref _captured, value, nameof(Captured)))
+                {
+                    RaisePropertyChanged(nameof(Prisoners));
                     RaisePropertyChanged(nameof(Score));
+                }
             }
         }
+        #endregion Captured
+
+        #region Dead
+        private int _dead;
+        public int Dead
+        {
+            get => _dead;
+            set
+            {
+                if (SetProperty(ref _dead, value, nameof(Dead)))
+                {
+                    RaisePropertyChanged(nameof(Prisoners));
+                    RaisePropertyChanged(nameof(Score));
+                }
+            }
+        }
+        #endregion Dead
+
+        public decimal Score => _komi + Prisoners + _area;
+        public int Prisoners => _captured + _dead;
     }
 }

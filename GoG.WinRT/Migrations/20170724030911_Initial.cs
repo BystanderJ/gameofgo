@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace GoG.WinRT.Migrations
 {
-    public partial class InitialMigration : Migration
+    public partial class Initial : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -29,8 +29,7 @@ namespace GoG.WinRT.Migrations
                     Id = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     CapturedStones = table.Column<string>(nullable: true),
-                    Status = table.Column<int>(nullable: false),
-                    WinMargin = table.Column<decimal>(nullable: false)
+                    Status = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -59,6 +58,7 @@ namespace GoG.WinRT.Migrations
                 {
                     Id = table.Column<Guid>(nullable: false),
                     BlackPositions = table.Column<string>(nullable: true),
+                    Created = table.Column<DateTime>(nullable: false),
                     Operation = table.Column<int>(nullable: false),
                     Player1Id = table.Column<int>(nullable: true),
                     Player2Id = table.Column<int>(nullable: true),
@@ -66,8 +66,7 @@ namespace GoG.WinRT.Migrations
                     Size = table.Column<byte>(nullable: false),
                     Status = table.Column<int>(nullable: false),
                     WhitePositions = table.Column<string>(nullable: true),
-                    WhoseTurn = table.Column<int>(nullable: false),
-                    WinMargin = table.Column<decimal>(nullable: false)
+                    WhoseTurn = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {

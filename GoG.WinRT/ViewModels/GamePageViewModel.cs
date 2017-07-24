@@ -12,41 +12,53 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-// ReSharper disable RedundantCatchClause
 
+// ReSharper disable RedundantCatchClause
 // ReSharper disable ExplicitCallerInfoArgument
 
 namespace GoG.WinRT.ViewModels
 {
     public class GamePageViewModel : PageViewModel
     {
-        #region Ctor
-        public GamePageViewModel(INavigationService navigationService,
-            ISessionStateService sessionStateService,
-            IGameEngine engine)
-            : base(navigationService, sessionStateService, engine)
-        {
-        }
-        #endregion Ctor
-
         #region Data
 
+        private IRepository _repository;
+        private bool _showedDeadStoneMessage;
         private GoColor? _savedColor;
         private string _hint;
         private PlayerViewModel[] _players;
         private GoGame _activeGame;
         private Guid _activeGameId;
-
+        
         #endregion Data
+
+        #region Ctor
+        public GamePageViewModel(INavigationService navigationService,
+            ISessionStateService sessionStateService,
+            IGameEngine engine,
+            IRepository repository)
+            : base(navigationService, sessionStateService, engine)
+        {
+            _repository = repository;
+        }
+        #endregion Ctor
 
         #region Properties
 
         #region ShowingArea
         private bool _showingArea;
+        [RestorableState]
         public bool ShowingArea
         {
             get => _showingArea;
-            set => SetProperty(ref _showingArea, value);
+            set
+            {
+                if (SetProperty(ref _showingArea, value))
+                {
+                    if (_activeGame != null)
+                        _activeGame.ShowingArea = ShowingArea;
+                }
+            }
         }
 
         #endregion ShowingArea
@@ -55,7 +67,8 @@ namespace GoG.WinRT.ViewModels
         private string _messageText;
         public string MessageText
         {
-            get => _messageText; set
+            get => _messageText;
+            set
             {
                 if (_messageText == value)
                     return;
@@ -229,7 +242,7 @@ namespace GoG.WinRT.ViewModels
         public DelegateCommand<object> PassCommand => _passCommand ?? (_passCommand = new DelegateCommand<object>(ExecutePassCommand, CanPassCommand));
         public bool CanPassCommand(object position)
         {
-            //Novalidation required at in version 1.0. Since the human player si always activated
+            // No validation required in version 1.0. Since the human player is always activated.
             return IsBusy == false && Status == GoGameStatus.Active;
         }
         public async void ExecutePassCommand(object position)
@@ -239,6 +252,11 @@ namespace GoG.WinRT.ViewModels
             var move = new GoMove(MoveType.Pass,
                                   _players[WhoseTurn].Color, null);
             var resp = await GameEngine.PlayAsync(_activeGameId, move);
+            if (resp.ResultCode == GoResultCode.Success && 
+                resp.MoveResult.Status != GoGameStatus.Active)
+            {
+                await CalculateArea(true);
+            }
             IsBusy = false;
             MessageText = null;
 
@@ -246,9 +264,21 @@ namespace GoG.WinRT.ViewModels
             {
                 AddMoveToHistory(resp.Move, resp.MoveResult);
                 SwapTurns();
-                AdjustToState(resp.MoveResult.Status, resp.MoveResult.WinMargin);
+                
+                AdjustToState(resp.MoveResult.Status);
+                var oldStatus = Status;
                 if (Status == GoGameStatus.Active)
-                    PlayCurrentUser();
+                    await PlayCurrentUser();
+                // PlayCurrentUser() can change the Status, so we may need to recalc.
+                if (oldStatus != Status)
+                {
+                    IsBusy = true;
+                    MessageText = "Calculating...";
+                    await CalculateArea(Status != GoGameStatus.Active);
+                    IsBusy = false;
+                    MessageText = null;
+                    AdjustToState(Status);
+                }
             }
             else if (resp.ResultCode == GoResultCode.CommunicationError)
                 await HandleCommunicationError("Passing...");
@@ -295,21 +325,31 @@ namespace GoG.WinRT.ViewModels
                                   _players[WhoseTurn].Color,
                                   position);
             GoMoveResponse resp = await GameEngine.PlayAsync(_activeGameId, move);
+            await CalculateArea();
             IsBusy = false;
             MessageText = null;
 
             if (resp.ResultCode == GoResultCode.Success)
             {
                 AddMoveToHistory(resp.Move, resp.MoveResult);
-                //Pieces[resp.Move.Position].IsNewPiece = true;
                 RemoveCapturedPieces(resp);
-                CurrentPlayer.Prisoners += resp.MoveResult.CapturedStones.Split(' ').Count(x => x != string.Empty);
+                CurrentPlayer.Captured += resp.MoveResult.CapturedStones.Split(' ').Count(x => x != string.Empty);
                 Pieces[position].RaiseMultiplePropertiesChanged();
                 SwapTurns();
 
-                AdjustToState(resp.MoveResult.Status, resp.MoveResult.WinMargin);
+                AdjustToState(resp.MoveResult.Status);
+                var oldStatus = Status;
                 if (Status == GoGameStatus.Active)
-                    PlayCurrentUser();
+                    await PlayCurrentUser();
+                if (oldStatus != Status)
+                {
+                    IsBusy = true;
+                    MessageText = "Calculating...";
+                    await CalculateArea(Status != GoGameStatus.Active);
+                    IsBusy = false;
+                    MessageText = null;
+                    AdjustToState(Status);
+                }
             }
             else if (resp.ResultCode == GoResultCode.CommunicationError)
                 await HandleCommunicationError("Moving...");
@@ -351,14 +391,22 @@ namespace GoG.WinRT.ViewModels
                                   _players[WhoseTurn].Color,
                                   null);
             var resp = await GameEngine.PlayAsync(_activeGameId, move);
+            //await CalculateArea();
             IsBusy = false;
             MessageText = null;
 
             if (resp.ResultCode == GoResultCode.Success)
             {
+                AdjustToState(resp.MoveResult.Status);
+                await Task.Delay(2000);
                 //AddMoveToHistory(resp.Move, resp.MoveResult);
                 SwapTurns();
-                AdjustToState(resp.MoveResult.Status, resp.MoveResult.WinMargin);
+                IsBusy = true;
+                MessageText = "Calculating...";
+                await CalculateArea(Status != GoGameStatus.Active);
+                IsBusy = false;
+                MessageText = null;
+                AdjustToState(resp.MoveResult.Status);
             }
             else if (resp.ResultCode == GoResultCode.CommunicationError)
                 await HandleCommunicationError("Resigning...");
@@ -373,7 +421,7 @@ namespace GoG.WinRT.ViewModels
         #endregion ResignCommand
 
         #region UndoCommand
-        DelegateCommand _undoCommand;
+        private DelegateCommand _undoCommand;
         public DelegateCommand UndoCommand => _undoCommand ?? (_undoCommand = new DelegateCommand(ExecuteUndo, CanUndo));
 
         public bool CanUndo()
@@ -409,7 +457,8 @@ namespace GoG.WinRT.ViewModels
                 _activeGame = resp.GameState;
 
                 ContinueFromActiveGameState();
-                PlayCurrentUser();
+                await PlayCurrentUser();
+                await CalculateArea();
 
                 //// Removes a resign or removes the last two moves, restoring any captured pieces and reducing
                 //// prisoner count as necessary.
@@ -434,32 +483,52 @@ namespace GoG.WinRT.ViewModels
         #endregion UndoCommand
 
         #region ShowAreaCommand
-        DelegateCommand _showAreaCommand;
+        private DelegateCommand _showAreaCommand;
         public DelegateCommand ShowAreaCommand => _showAreaCommand ?? (_showAreaCommand = new DelegateCommand(ExecuteShowArea, CanShowArea));
-
         public bool CanShowArea()
         {
             if (_player1 == null || _player2 == null)
                 return false;
-            return true;
+            return IsBusy == false && Status == GoGameStatus.Active;
         }
         public async void ExecuteShowArea()
         {
             ShowingArea = !ShowingArea;
+            await _repository.UpdateGameAsync(_activeGame);
+            RaiseCommandsChanged();
 
-            if (!ShowingArea)
-            {
-                ClearArea();
-                return;
-            }
-
-            DisplayMessage("Area Calculation",
-                "This will calculate area after every move, if possible.\n\nIf not possible (or turned off), the area will be cleared and the running scores will not show Area.").Forget();
-
+            IsBusy = true;
+            MessageText = "Calculating...";
             await CalculateArea();
+            IsBusy = false;
+            MessageText = null;
         }
 
         #endregion ShowAreaCommand
+
+        #region EstimateDeadCommand
+        private DelegateCommand _estimateDeadCommand;
+        public DelegateCommand EstimateDeadCommand => _estimateDeadCommand ?? (_estimateDeadCommand = new DelegateCommand(ExecuteEstimateDeadCommand, CanEstimateDeadCommand));
+        public bool CanEstimateDeadCommand()
+        {
+            return IsBusy == false && Status == GoGameStatus.Active;
+        }
+        public async void ExecuteEstimateDeadCommand()
+        {
+            IsBusy = true;
+            MessageText = "Calculating...";
+            if (_showedDeadStoneMessage || await DisplayQuery("Dead Stone Estimation",
+                    "THIS IS A VERY LENGTHY CALCULATION ON LARGER BOARD SIZES.\n\nDead stone estimation will estimate the current dead stones based on 10,000 simulated games.  The result may be completely wrong, or it may fail to find the dead stones altogether, so please use this feature with that in mind.  When completed, the Area will include dead stones, but only until the next move.\n\nA dead stone is one that is suspected of being close to being captured, or will inevitably be captured.\n\nFinal scoring *will* include dead stones, but it may miss some opposing stones you consider to be dead.  Therefore, to ensure you get points for them, you *must* capture all dead stones before you pass!",
+                    "Continue", "Cancel") == "Continue")
+            {
+                await CalculateArea(true);
+                _showedDeadStoneMessage = true;
+            }
+
+            IsBusy = false;
+            MessageText = null;
+        }
+        #endregion EstimateDeadCommand
 
         #endregion Commands
 
@@ -499,26 +568,34 @@ namespace GoG.WinRT.ViewModels
             }
         }
 
+        protected override bool CanGoBack()
+        {
+            return !IsBusy;
+        }
+
         #endregion Virtuals
 
         #region Private
 
-        private void RaiseCommandsChanged()
+        protected override void RaiseCommandsChanged()
         {
+            base.RaiseCommandsChanged();
+
             GetHintCommand.RaiseCanExecuteChanged();
             PassCommand.RaiseCanExecuteChanged();
             PressedCommand.RaiseCanExecuteChanged();
             ResignCommand.RaiseCanExecuteChanged();
             UndoCommand.RaiseCanExecuteChanged();
             ShowAreaCommand.RaiseCanExecuteChanged();
+            EstimateDeadCommand.RaiseCanExecuteChanged();
         }
 
-        private void PlayCurrentUser()
+        private async Task PlayCurrentUser()
         {
             switch (CurrentPlayer.PlayerType)
             {
-                case PlayerType.AI:
-                    PlayAi();
+                case PlayerType.Ai:
+                    await PlayOpponent();
                     break;
                 case PlayerType.Human:
                     // Nothing to do, just wait for user to make his move.
@@ -530,7 +607,7 @@ namespace GoG.WinRT.ViewModels
             }
         }
 
-        private async void PlayAi()
+        private async Task PlayOpponent()
         {
             MessageText = _players[WhoseTurn].Name + " is thinking...";
             IsBusy = true;
@@ -548,7 +625,7 @@ namespace GoG.WinRT.ViewModels
                 switch (resp.Move.MoveType)
                 {
                     case MoveType.Normal:
-                        CurrentPlayer.Prisoners += resp.MoveResult.CapturedStones.Split(' ').Count(x => x != String.Empty);
+                        CurrentPlayer.Captured += resp.MoveResult.CapturedStones.Split(' ').Count(x => x != String.Empty);
                         if (Pieces.ContainsKey(resp.Move.Position))
                         {
                             var p = Pieces[resp.Move.Position];
@@ -559,21 +636,39 @@ namespace GoG.WinRT.ViewModels
                                 AddMoveToHistory(resp.Move, resp.MoveResult);
                                 RemoveCapturedPieces(resp);
                                 SwapTurns();
-                                PlayCurrentUser();
+                                await PlayCurrentUser();
+                                await CalculateArea();
                             }
                         }
                         break;
                     case MoveType.Pass:
+
                         AddMoveToHistory(resp.Move, resp.MoveResult);
-                        await InvokeFleetingMessage(CurrentPlayer.Name + " passes.", 1500);
+                        await InvokeFleetingMessage(CurrentPlayer.Name + " passes.", 2000);
+                        if (Status != GoGameStatus.Active)
+                        {
+                            IsBusy = true;
+                            MessageText = "Calculating...";
+                            await CalculateArea(true);
+                            IsBusy = false;
+                            MessageText = null;
+                        }
+                        AdjustToState(resp.MoveResult.Status);
                         SwapTurns();
-                        AdjustToState(resp.MoveResult.Status, resp.MoveResult.WinMargin);
                         if (Status == GoGameStatus.Active)
-                            PlayCurrentUser();
+                        {
+                            await CalculateArea();
+                            await PlayCurrentUser();
+                        }
                         break;
                     case MoveType.Resign:
-                        Status = CurrentPlayer.Color == GoColor.Black ? GoGameStatus.WhiteWon : GoGameStatus.BlackWon;
-                        MessageText = CurrentPlayer.Name + " resigns.  You win!";
+                        AdjustToState(resp.MoveResult.Status);
+                        await Task.Delay(2000);
+                        IsBusy = true;
+                        MessageText = "Calculating...";
+                        await CalculateArea(true);
+                        IsBusy = false;
+                        AdjustToState(Status);
                         SwapTurns();
                         break;
                 }
@@ -630,11 +725,10 @@ namespace GoG.WinRT.ViewModels
             }
             catch (Exception)
             {
-                // eat a winrt bug where the UI sees the inserted item and throws an exception if the user
+                // Eat a winrt bug where the UI sees the inserted item and throws an exception if the user
                 // already navigated away from the game page.
                 throw;
             }
-
         }
 
         //private void UndoMovesFromHistory()
@@ -718,15 +812,15 @@ namespace GoG.WinRT.ViewModels
                 }
 
             foreach (var capturedPosition in resp.MoveResult.CapturedStones.Split(' '))
-                if (!String.IsNullOrWhiteSpace(capturedPosition))
+                if (!string.IsNullOrWhiteSpace(capturedPosition))
                 {
-                    if (Pieces.ContainsKey(capturedPosition))
-                    {
-                        var piece = Pieces[capturedPosition];
-                        piece.Color = null;
-                        piece.IsNewCapture = true;
-                        piece.RaiseMultiplePropertiesChanged();
-                    }
+                    if (!Pieces.ContainsKey(capturedPosition))
+                        continue;
+
+                    var piece = Pieces[capturedPosition];
+                    piece.Color = null;
+                    piece.IsNewCapture = true;
+                    piece.RaiseMultiplePropertiesChanged();
                 }
         }
 
@@ -753,6 +847,7 @@ namespace GoG.WinRT.ViewModels
             if (resp.ResultCode == GoResultCode.Success)
             {
                 _activeGame = resp.GameState;
+                ShowingArea = _activeGame.ShowingArea;
 
                 ContinueFromActiveGameState();
 
@@ -772,11 +867,17 @@ namespace GoG.WinRT.ViewModels
                     case GoOperation.Idle:
                         if (AbortOperation)
                             break;
-                        RunOnUIThread(() =>
+                        RunOnUIThread(async () =>
                         {
-                            AdjustToState(resp.GameState.Status, resp.GameState.WinMargin);
+                            AdjustToState(resp.GameState.Status);
                             if (Status == GoGameStatus.Active)
-                                PlayCurrentUser();
+                                await PlayCurrentUser();
+                            IsBusy = true;
+                            MessageText = "Calculating...";
+                            await CalculateArea(Status != GoGameStatus.Active);
+                            IsBusy = false;
+                            MessageText = null;
+                            AdjustToState(Status);
                         });
                         break;
                 }
@@ -807,8 +908,6 @@ namespace GoG.WinRT.ViewModels
 
         private void ContinueFromActiveGameState()
         {
-            ShowingArea = _activeGame.ShowingArea;
-
             // Player1 is always black, Player2 is always white.
             Player1 = new PlayerViewModel(_activeGame.Player1, GoColor.Black);
             Player2 = new PlayerViewModel(_activeGame.Player2, GoColor.White);
@@ -819,7 +918,7 @@ namespace GoG.WinRT.ViewModels
             RaisePropertyChanged(nameof(WhoseTurn));
             CurrentTurnColor = _players[_whoseTurn].Color;
 
-            AdjustToState(_activeGame.Status, _activeGame.WinMargin);
+            AdjustToState(_activeGame.Status);
 
             // Note that setting BoardEdgeSize triggers the board control to generate.
             BoardEdgeSize = _activeGame.Size;
@@ -853,8 +952,8 @@ namespace GoG.WinRT.ViewModels
                     whitePrisoners += h.Result.CapturedStones.Split(' ').Count(x => x != string.Empty);
             }
 
-            Player1.Prisoners = Player1.Color == GoColor.Black ? blackPrisoners : whitePrisoners;
-            Player2.Prisoners = Player2.Color == GoColor.Black ? blackPrisoners : whitePrisoners;
+            Player1.Captured = Player1.Color == GoColor.Black ? blackPrisoners : whitePrisoners;
+            Player2.Captured = Player2.Color == GoColor.Black ? blackPrisoners : whitePrisoners;
 
             // Set piece states for all the existing white and black pieces.
             SetPieces(_activeGame.BlackPositions, GoColor.Black);
@@ -872,26 +971,22 @@ namespace GoG.WinRT.ViewModels
             RaiseCommandsChanged();
         }
 
-        private void AdjustToState(GoGameStatus status, decimal margin)
+        private void AdjustToState(GoGameStatus status)
         {
             Status = status;
 
             var humanPlayer = Player1.PlayerType == PlayerType.Human ? Player1 : Player2;
             var aiPlayer = Player1.PlayerType == PlayerType.Human ? Player2 : Player1;
 
+            var margin = humanPlayer.Score - aiPlayer.Score;
+
             switch (Status)
             {
-                case GoGameStatus.BlackWon:
-                    if (humanPlayer.Color == GoColor.Black)
+                case GoGameStatus.Ended:
+                    if (margin > 0)
                         MessageText = "You win by " + margin + "!";
                     else
-                        MessageText = aiPlayer.Name + " wins by " + margin + ".";
-                    break;
-                case GoGameStatus.WhiteWon:
-                    if (humanPlayer.Color == GoColor.White)
-                        MessageText = "You win by " + margin + "!";
-                    else
-                        MessageText = aiPlayer.Name + " wins by " + margin + ".";
+                        MessageText = aiPlayer.Name + " wins by " + -margin + ".";
                     break;
                 case GoGameStatus.BlackWonDueToResignation:
                     if (humanPlayer.Color == GoColor.Black)
@@ -925,50 +1020,40 @@ namespace GoG.WinRT.ViewModels
             }
         }
 
-        private async Task CalculateArea()
+        private async Task CalculateArea(bool estimateDead = false)
         {
-            try
+            var areaResponse = await GameEngine.GetArea(_activeGameId, estimateDead);
+            if (areaResponse.ResultCode != GoResultCode.Success)
             {
-                MessageText = "Calculating...";
-                IsBusy = true;
-                var areaResponse = await GameEngine.GetArea(_activeGameId, ShowingArea);
-                if (areaResponse.ResultCode != GoResultCode.Success)
+                foreach (var p in Pieces.Values)
+                    p.Territory = null;
+            }
+            else
+            {
+                if (ShowingArea || estimateDead)
                 {
-                    ClearArea();
-                    return;
+                    foreach (var p in Pieces.Keys)
+                    {
+                        if (areaResponse.BlackArea.Contains(p) ||
+                            areaResponse.WhiteDead.Contains(p))
+                            Pieces[p].Territory = GoColor.Black;
+                        else if (areaResponse.WhiteArea.Contains(p) ||
+                                 areaResponse.BlackDead.Contains(p) ||
+                                 Pieces[p].Color == GoColor.White)
+                            Pieces[p].Territory = GoColor.White;
+                        else
+                            Pieces[p].Territory = null;
+                    }
                 }
-
-                foreach (var p in Pieces.Keys)
-                {
-
-                    if (areaResponse.BlackArea.Contains(p) ||
-                        areaResponse.WhiteDead.Contains(p))
-                        Pieces[p].Territory = GoColor.Black;
-                    else if (areaResponse.WhiteArea.Contains(p) ||
-                             areaResponse.BlackDead.Contains(p) ||
-                             Pieces[p].Color == GoColor.White)
-                        Pieces[p].Territory = GoColor.White;
-                    else
-                        Pieces[p].Territory = null;
-                }
+                else
+                    foreach (var p in Pieces.Values)
+                        p.Territory = null;
             }
-#pragma warning disable 168
-            catch (Exception ex)
-#pragma warning restore 168
-            {
-                ClearArea();
-            }
-            finally
-            {
-                IsBusy = false;
-                MessageText = null;
-            }
-        }
 
-        private void ClearArea()
-        {
-            foreach (var p in Pieces.Values)
-                p.Territory = null;
+            Player1.Area = areaResponse.BlackArea?.Count ?? 0;
+            Player1.Dead = areaResponse.WhiteDead?.Count ?? 0;
+            Player2.Area = areaResponse.WhiteArea?.Count ?? 0;
+            Player2.Dead = areaResponse.BlackDead?.Count ?? 0;
         }
 
         #endregion Private

@@ -44,13 +44,11 @@ namespace GoG.Infrastructure.Engine
         
         Active = 0,
         
-        BlackWon = 1,
+        Ended = 1,
         
-        WhiteWon = 2,
+        BlackWonDueToResignation = 2,
         
-        BlackWonDueToResignation = 3,
-        
-        WhiteWonDueToResignation = 4
+        WhiteWonDueToResignation = 3
     }
 
     
@@ -59,7 +57,7 @@ namespace GoG.Infrastructure.Engine
         
         Human = 0,
         
-        AI = 1,
+        Ai = 1,
         
         Remote = 2
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GoG.Infrastructure.Engine
 {
@@ -22,7 +23,7 @@ namespace GoG.Infrastructure.Engine
             GoGameStatus status,
             GoColor whoseTurn, 
             string blackPositions, string whitePositions,
-            List<GoMoveHistoryItem> goMoveHistory, decimal winMargin)
+            List<GoMoveHistoryItem> goMoveHistory)//, decimal winMargin)
             : this()
         {
             Size = size;
@@ -33,15 +34,16 @@ namespace GoG.Infrastructure.Engine
             BlackPositions = blackPositions;
             WhitePositions = whitePositions;
             GoMoveHistory = goMoveHistory;
-            WinMargin = winMargin;
+            Id = Guid.NewGuid();
         }
 
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public Guid Id { get; set; }
 
         public bool ShowingArea { get; set; }
 
         public GoGameStatus Status { get; set; }
-        public decimal WinMargin { get; set; }
+        //public decimal WinMargin { get; set; }
         public GoPlayer Player1 { get; set; }
         public GoPlayer Player2 { get; set; }
         public GoOperation Operation { get; set; }

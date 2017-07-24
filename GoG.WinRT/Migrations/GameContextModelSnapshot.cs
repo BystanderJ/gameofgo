@@ -18,8 +18,7 @@ namespace GoG.WinRT.Migrations
 
             modelBuilder.Entity("GoG.Infrastructure.Engine.GoGame", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd();
+                    b.Property<Guid>("Id");
 
                     b.Property<string>("BlackPositions");
 
@@ -40,8 +39,6 @@ namespace GoG.WinRT.Migrations
                     b.Property<string>("WhitePositions");
 
                     b.Property<int>("WhoseTurn");
-
-                    b.Property<decimal>("WinMargin");
 
                     b.HasKey("Id");
 
@@ -100,8 +97,6 @@ namespace GoG.WinRT.Migrations
                     b.Property<string>("CapturedStones");
 
                     b.Property<int>("Status");
-
-                    b.Property<decimal>("WinMargin");
 
                     b.HasKey("Id");
 

@@ -30,8 +30,8 @@ namespace GoG.Infrastructure.Engine
         
         private static string DetermineCapturedStones(string before, string after)
         {
-            string[] b = before.Split(' ');
-            string[] a = after.Split(' ');
+            var b = before.Split(' ');
+            var a = after.Split(' ');
 
             var rval = new List<string>();
             foreach (var s in b)
@@ -48,6 +48,6 @@ namespace GoG.Infrastructure.Engine
         public GoGameStatus Status { get; set; }
 
         
-        public decimal WinMargin { get; set; }
+        //public decimal WinMargin { get; set; }
     }
 }

@@ -28,14 +28,6 @@ namespace GoG.WinRT
 
                         msg.AppendLine("Base Exception Type: " + ex.GetType().FullName);
 
-                        if (Container != null)
-                        {
-                            var nav = NavigationService;
-                            if (nav != null)
-                                msg.AppendLine("INavigationService.CanGoBack() == " + nav.CanGoBack());
-
-                        }
-
                         if (Window.Current == null)
                             msg.AppendLine("Window.Current is NULL.");
                         else

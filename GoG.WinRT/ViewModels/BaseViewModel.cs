@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Windows.UI.Core;
+using Windows.UI.Popups;
 using GoG.Infrastructure;
 using GoG.Infrastructure.Engine;
 using Prism.Windows.Mvvm;
@@ -25,8 +26,17 @@ namespace GoG.WinRT.ViewModels
 
         protected static async Task DisplayMessage(string title, string msg)
         {
-            var dialog = new Windows.UI.Popups.MessageDialog(msg, title);
+            var dialog = new MessageDialog(msg, title);
             await dialog.ShowAsync();
+        }
+
+        protected static async Task<string> DisplayQuery(string title, string msg, params string[] buttons)
+        {
+            var dialog = new MessageDialog(msg, title);
+            for (var i = 0; i < buttons.Length; i++)
+                dialog.Commands.Add(new UICommand(buttons[i], null, i));
+            var c = await dialog.ShowAsync();
+            return c.Label;
         }
 
         protected static async Task DisplayErrorCode(GoResultCode code)

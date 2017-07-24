@@ -9,8 +9,8 @@ using GoG.Infrastructure.Engine;
 namespace GoG.WinRT.Migrations
 {
     [DbContext(typeof(GameContext))]
-    [Migration("20170717100347_InitialMigration")]
-    partial class InitialMigration
+    [Migration("20170724030911_Initial")]
+    partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -19,10 +19,11 @@ namespace GoG.WinRT.Migrations
 
             modelBuilder.Entity("GoG.Infrastructure.Engine.GoGame", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd();
+                    b.Property<Guid>("Id");
 
                     b.Property<string>("BlackPositions");
+
+                    b.Property<DateTime>("Created");
 
                     b.Property<int>("Operation");
 
@@ -39,8 +40,6 @@ namespace GoG.WinRT.Migrations
                     b.Property<string>("WhitePositions");
 
                     b.Property<int>("WhoseTurn");
-
-                    b.Property<decimal>("WinMargin");
 
                     b.HasKey("Id");
 
@@ -99,8 +98,6 @@ namespace GoG.WinRT.Migrations
                     b.Property<string>("CapturedStones");
 
                     b.Property<int>("Status");
-
-                    b.Property<decimal>("WinMargin");
 
                     b.HasKey("Id");
 

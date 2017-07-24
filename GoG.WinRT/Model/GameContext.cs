@@ -9,7 +9,7 @@ namespace GoG.WinRT.Model
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite("Data Source=GoG.db");
+            optionsBuilder.UseSqlite("Data Source=temp2.db");
         }
     }
 }

@@ -77,6 +77,8 @@ namespace GoG.Board
             _messageDisplay = GetTemplateChild("MessageDisplay") as Grid;
 
             base.OnApplyTemplate();
+
+            DoMessageTextAnimation();
         }
 
         //void _gameBorder_PointerPressed(object sender, PointerRoutedEventArgs e)
@@ -93,26 +95,13 @@ namespace GoG.Board
         //    CurrentPointerPosition = gameCoordinates;
         //}
 
-        static readonly Brush LineBrush = new SolidColorBrush(Colors.Black);
+        private static readonly Brush LineBrush = new SolidColorBrush(Colors.Black);
 
         public void DisplayMessageAnimation()
         {
-            if (_displayMessageStoryboard != null)
-                _displayMessageStoryboard.Begin();
-            else
-            {
-                // This control isn't fully loaded yet, delay on another thread
-                // until OnApplyTemplate() is executed.
-                Task.Run(
-                    async () =>
-                    {
-                        while(_displayMessageStoryboard == null)
-                            Task.Delay(100).Wait();
-                        await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => { _displayMessageStoryboard?.Begin(); });
-                    });
-            }
+            _displayMessageStoryboard?.Begin();
         }
-        
+
         public void HideMessageAnimation()
         {
             _hideMessageStoryboard?.Begin();
@@ -130,9 +119,9 @@ namespace GoG.Board
 
             if (edgesize == 0 || _gameBorder == null || _gridContainer == null)
                 return;
-            
+
             _pieces = new Dictionary<string, GamePiece>();
-            
+
             for (int i = _gridContainer.Children.Count - 1; i >= 0; i--)
             {
                 var e = _gridContainer.Children[i];
@@ -191,14 +180,14 @@ namespace GoG.Board
 
                 // Create horizontal line.
                 var line = new Line
-                    {
-                        StrokeThickness = lineThickness - .5,
-                        Stroke = LineBrush,
-                        HorizontalAlignment = HorizontalAlignment.Stretch,
-                        VerticalAlignment = VerticalAlignment.Center,
-                        X1 = -5,
-                        X2 = short.MaxValue,
-                    };
+                {
+                    StrokeThickness = lineThickness - .5,
+                    Stroke = LineBrush,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    X1 = -5,
+                    X2 = short.MaxValue,
+                };
 
                 line.SetValue(Grid.ColumnProperty, 2);
                 line.SetValue(Grid.ColumnSpanProperty, (edgesize * 2) - 2);
@@ -297,7 +286,7 @@ namespace GoG.Board
                     gamePiece.SetValue(Grid.RowSpanProperty, 2);
 
                     gamePiece.Click += GamePieceOnClick;
-                    
+
                     _pieces[DecodePosition(new Point(column, row))] = gamePiece;
 
                     _gridContainer.Children.Add(gamePiece);
@@ -414,13 +403,13 @@ namespace GoG.Board
         private TextBlock CreateTextBlock(string content)
         {
             var tb = new TextBlock
-                {
-                    FontWeight = FontWeights.Bold,
-                    FontSize = 16,
-                    Text = content,
-                    Foreground = new SolidColorBrush(Color.FromArgb(139, 234, 234, 234)),
-                    Margin = new Thickness(5, 1, 5, 1)
-                };
+            {
+                FontWeight = FontWeights.Bold,
+                FontSize = 16,
+                Text = content,
+                Foreground = new SolidColorBrush(Color.FromArgb(139, 234, 234, 234)),
+                Margin = new Thickness(5, 1, 5, 1)
+            };
             return tb;
         }
 
@@ -489,7 +478,7 @@ namespace GoG.Board
             var ctl = _pieces[piece.Position];
             Debug.Assert(ctl != null, "ctl was null");
             ctl.Territory = piece.Territory;
-            
+
             ctl.UpdateVisualStateTerritory();
         }
 
@@ -505,7 +494,7 @@ namespace GoG.Board
             ctl.IsHint = piece.IsHint;
             ctl.IsLastMove = piece.IsNewPiece;
             ctl.IsNewCapture = piece.IsNewCapture;
-            
+
             ctl.UpdateVisualStateMainProperties();
         }
 
@@ -566,10 +555,25 @@ namespace GoG.Board
         #region MessageText
         public string MessageText
         {
-            get => (string)GetValue(MessageTextProperty); set => SetValue(MessageTextProperty, value);
+            get => (string)GetValue(MessageTextProperty);
+            set => SetValue(MessageTextProperty, value);
         }
         public static readonly DependencyProperty MessageTextProperty =
-            DependencyProperty.Register("MessageText", typeof(string), typeof(GameBoard), new PropertyMetadata(null));
+            DependencyProperty.Register(nameof(MessageText), typeof(string), typeof(GameBoard), new PropertyMetadata(null, MessageTextPropertyChangedCallback));
+        private static void MessageTextPropertyChangedCallback(DependencyObject dobj, DependencyPropertyChangedEventArgs args)
+        {
+            var gameBoard = (GameBoard) dobj;
+            gameBoard.DoMessageTextAnimation();
+        }
+
+        private void DoMessageTextAnimation()
+        {
+            if (MessageText == null)
+                HideMessageAnimation();
+            else
+                DisplayMessageAnimation();
+        }
+
         #endregion MessageText
 
         #region IsBusy

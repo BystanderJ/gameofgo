@@ -109,6 +109,9 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="System.ComponentModel.Annotations">
+      <HintPath>..\..\..\Users\Chris Bordeman\.nuget\packages\System.ComponentModel.Annotations\4.1.0\ref\netcore50\System.ComponentModel.Annotations.dll</HintPath>
+    </Reference>
     <Reference Include="System.Runtime.Serialization.Primitives">
       <HintPath>..\..\..\Users\Chris Bordeman\.nuget\packages\System.Runtime.Serialization.Primitives\4.1.1\ref\netcore50\System.Runtime.Serialization.Primitives.dll</HintPath>
     </Reference>

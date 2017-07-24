@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.UI.Core;
 using Windows.UI.ViewManagement;
@@ -26,7 +27,7 @@ namespace GoG.WinRT.Views
 
         private GamePageViewModel _viewModel;
 
-        private void OnDataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
+        private async void OnDataContextChanged(FrameworkElement sender, DataContextChangedEventArgs args)
         {
             // Unsubscribe from old viewmodel's events.
             if (_viewModel != null)
@@ -39,35 +40,35 @@ namespace GoG.WinRT.Views
             {
                 _viewModel.PropertyChanged += ViewModelOnPropertyChanged;
 
-                AdjustToVm(nameof(GamePageViewModel.WhoseTurn));
-                AdjustToVm(nameof(GamePageViewModel.MessageText));
+                await AdjustToVm(nameof(GamePageViewModel.WhoseTurn));
+                await AdjustToVm(nameof(GamePageViewModel.MessageText));
             }
         }
 
-        private void ViewModelOnPropertyChanged(object sender, PropertyChangedEventArgs propertyChangedEventArgs)
+        private async void ViewModelOnPropertyChanged(object sender, PropertyChangedEventArgs propertyChangedEventArgs)
         {
-            AdjustToVm(propertyChangedEventArgs.PropertyName);
+            await AdjustToVm(propertyChangedEventArgs.PropertyName);
         }
 
-        private void AdjustToVm(string propertyName)
+        private async Task AdjustToVm(string propertyName)
         {
             if (_viewModel == null)
                 return;
 
             switch (propertyName)
             {
-                case nameof(GamePageViewModel.MessageText):
-                    if (!String.IsNullOrEmpty(_viewModel.MessageText))
-                    {
-                        BigBoard.DisplayMessageAnimation();
-                        SmallBoard.DisplayMessageAnimation();
-                    }
-                    else
-                    {
-                        BigBoard.HideMessageAnimation();
-                        SmallBoard.HideMessageAnimation();
-                    }
-                    break;
+                //case nameof(GamePageViewModel.MessageText):
+                //    if (!string.IsNullOrEmpty(_viewModel.MessageText))
+                //    {
+                //        BigBoard.DisplayMessageAnimation();
+                //        SmallBoard.DisplayMessageAnimation();
+                //    }
+                //    else
+                //    {
+                //        BigBoard.HideMessageAnimation();
+                //        SmallBoard.HideMessageAnimation();
+                //    }
+                //    break;
                 case nameof(GamePageViewModel.WhoseTurn):
                     if (_viewModel.WhoseTurn == 0)
                     {

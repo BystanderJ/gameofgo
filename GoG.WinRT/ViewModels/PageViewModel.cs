@@ -68,14 +68,21 @@ namespace GoG.WinRT.ViewModels
         {
             return true;
         }
+
+        protected virtual void RaiseCommandsChanged()
+        {
+            GoBackCommand.RaiseCanExecuteChanged();
+        }
+
         #endregion Virtuals
 
         #region Properties
-        
+
         private bool _isBusy;
         public bool IsBusy
         {
-            get => _isBusy; set
+            get => _isBusy;
+            set
             {
                 if (_isBusy != value)
                 {

@@ -14,16 +14,11 @@ namespace GoG.WinRT.ViewModels
 {
     public class SinglePlayerPageViewModel : PageViewModel
     {
-        #region Data
-        private readonly IRepository _repository;
-        #endregion Data
-
         #region Ctor
         public SinglePlayerPageViewModel(INavigationService navigationService,
             ISessionStateService sessionStateService, 
-            IGameEngine engine, IRepository repository) : base(navigationService, sessionStateService, engine)
+            IGameEngine engine) : base(navigationService, sessionStateService, engine)
         {
-            _repository = repository;
             _boardEdgeSize = 9;
             _sizes = new List<Pair>
                 {
@@ -216,7 +211,7 @@ namespace GoG.WinRT.ViewModels
                         p1.PlayerType = PlayerType.Human;
 
                         p2.Name = "Fuego";
-                        p2.PlayerType = PlayerType.AI;
+                        p2.PlayerType = PlayerType.Ai;
                         p2.Level = DifficultyLevel;
                     }
                     else
@@ -225,19 +220,17 @@ namespace GoG.WinRT.ViewModels
                         p2.PlayerType = PlayerType.Human;
 
                         p1.Name = "Fuego";
-                        p1.PlayerType = PlayerType.AI;
+                        p1.PlayerType = PlayerType.Ai;
                         p1.Level = DifficultyLevel;
                     }
                     var tmpState = new GoGame(
-                        (byte)BoardEdgeSize,
+                        (byte) BoardEdgeSize,
                         p1, p2,
                         GoGameStatus.Active,
                         GoColor.Black,
                         "",
                         "",
-                        new List<GoMoveHistoryItem>(), 
-                        0);
-                    tmpState.Id = Guid.NewGuid();
+                        new List<GoMoveHistoryItem>());
                     resp = await GameEngine.CreateGameAsync(tmpState);
                     BusyMessage = null;
                     IsBusy = false;

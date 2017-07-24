@@ -23,7 +23,7 @@ namespace GoG.WinRT.Services
         Task<GoHintResponse> HintAsync(Guid id, GoColor color);
         Task<GoMoveResponse> GenMoveAsync(Guid id, GoColor color);
         Task<GoGameStateResponse> UndoAsync(Guid id);
-        Task<GoAreaResponse> GetArea(Guid id, bool active);
+        Task<GoAreaResponse> GetArea(Guid id, bool estimateDead);
 
         #endregion Fuego
     }
