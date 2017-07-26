@@ -2,7 +2,7 @@ using FuegoLib;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
+using System.Globalization; 
 using System.Linq;
 using System.Threading.Tasks;
 using GoG.Infrastructure;
@@ -822,6 +822,7 @@ namespace GoG.WinRT.Services
             rval.BlackArea = GetContiguousAreaForHeldPoints(GoColor.Black, nonDeadBlacks);
             rval.WhiteArea = GetContiguousAreaForHeldPoints(GoColor.White, nonDeadWhites);
 
+            // Local functions are cool.
             List<string> GetContiguousAreaForHeldPoints(GoColor color, Point[] heldPoints)
             {
                 var result = new List<string>(_state.Size ^ 2);
@@ -847,7 +848,7 @@ namespace GoG.WinRT.Services
                         }
                     }
 
-                    // Add held point (which is by definition alive) because want 
+                    // Add held point (which is alive) because we want 
                     // area not just territory.
                     var heldDecoded = EngineHelpers.DecodePosition(held.X, held.Y, _state.Size);
                     if (!result.Contains(heldDecoded))
@@ -857,6 +858,7 @@ namespace GoG.WinRT.Services
                 return result;
             }
 
+            // Local functions are cool.
             bool AllNeighborsAreLibertiesOrColor(Point point, GoColor color, List<Point> visited)
             {
                 visited.Add(point);
@@ -872,6 +874,7 @@ namespace GoG.WinRT.Services
                     // If neighbors is a liberty (no color), traverse it.
                     if (neighborColor == null)
                     {
+                        // Self-recursive call.
                         if (!AllNeighborsAreLibertiesOrColor(neighbor, color, visited))
                             // A neighbor was opposite color, abort up the chain.
                             return false;
@@ -888,14 +891,24 @@ namespace GoG.WinRT.Services
                 return true;
             }
 
+            // Local functions are cool.
+            // Iterates over the neighbors.  Using yield
+            // allows caller to abort without iterating
+            // all neighboring points.  References
+            // _state.Size to determine edges of the board.
             IEnumerable<Point> GetNeighborPositions(Point p)
             {
+                // has a left
                 if (p.X > 0)
                     yield return new Point(p.X - 1, p.Y);
+                // has a right
                 if (p.X < _state.Size - 1)
                     yield return new Point(p.X + 1, p.Y);
+
+                // has an upper
                 if (p.Y > 0)
                     yield return (new Point(p.X, p.Y - 1));
+                // has a lower
                 if (p.Y < _state.Size - 1)
                     yield return new Point(p.X, p.Y + 1);
             }

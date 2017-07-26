@@ -14,7 +14,6 @@ namespace GoG.WinRT.ViewModels
             ISessionStateService sessionStateService, 
             IGameEngine engine) : base(navigationService, sessionStateService, engine)
         {
-            
         }
         #endregion Ctor
         
@@ -30,8 +29,7 @@ namespace GoG.WinRT.ViewModels
             await Launcher.LaunchUriAsync(new Uri(url));
         }
         #endregion LaunchUrlCommand
-
-
+        
         #region SinglePlayerCommand
         private DelegateCommand _singlePlayerCommand;
         public DelegateCommand SinglePlayerCommand => _singlePlayerCommand ?? (_singlePlayerCommand = new DelegateCommand(ExecuteSinglePlayerCommand, CanSinglePlayerCommand));
@@ -41,8 +39,7 @@ namespace GoG.WinRT.ViewModels
             NavigationService.Navigate("SinglePlayer", null);
         }
         #endregion SinglePlayerCommand
-
-
+        
         #region MultiPlayerCommand
         private DelegateCommand _multiPlayerCommand;
         public DelegateCommand MultiPlayerCommand => _multiPlayerCommand ?? (_multiPlayerCommand = new DelegateCommand(ExecuteMultiPlayerCommand, CanMultiPlayerCommand));
@@ -52,8 +49,7 @@ namespace GoG.WinRT.ViewModels
             NavigationService.Navigate("MultiPlayer", null);
         }
         #endregion MultiPlayerCommand
-
-
+        
         #endregion Commands
     }
 }

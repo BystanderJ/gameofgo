@@ -2,6 +2,8 @@
 using System.Text;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Activation;
+using Windows.ApplicationModel.Core;
+using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using GoG.WinRT.Services;
@@ -22,50 +24,58 @@ namespace GoG.WinRT
                 .SetExceptionDescriptionLoader(
                     ex =>
                     {
-                        var msg = new StringBuilder();
-
-                        ex = ex.GetBaseException();
-
-                        msg.AppendLine("Base Exception Type: " + ex.GetType().FullName);
-
-                        if (Window.Current == null)
-                            msg.AppendLine("Window.Current is NULL.");
-                        else
+                        try
                         {
-                            if (Window.Current.Content == null)
-                                msg.AppendLine("Window.Current.Content is NULL.");
+                            var msg = new StringBuilder();
+
+                            ex = ex.GetBaseException();
+
+                            msg.AppendLine("Base Exception Type: " + ex.GetType().FullName);
+
+                            if (Window.Current == null)
+                                msg.AppendLine("Window.Current is NULL.");
                             else
                             {
-                                var rf = Window.Current.Content as Frame;
-                                if (rf == null)
-                                    msg.AppendLine("Root frame is NULL.");
+                                if (Window.Current.Content == null)
+                                    msg.AppendLine("Window.Current.Content is NULL.");
                                 else
                                 {
-                                    msg.AppendLine("rootFrame.CurrentSourcePageType is " + rf.CurrentSourcePageType.Name);
-                                    if (rf.BackStack != null)
-                                        foreach (var p in rf.BackStack)
-                                            msg.AppendLine("Back page: " + p.SourcePageType.Name);
-                                    if (rf.ForwardStack != null)
-                                        foreach (var p in rf.ForwardStack)
-                                            msg.AppendLine("Forward page: " + p.SourcePageType.Name);
+                                    var rf = Window.Current.Content as Frame;
+                                    if (rf == null)
+                                        msg.AppendLine("Root frame is NULL.");
+                                    else
+                                    {
+                                        msg.AppendLine("rootFrame.CurrentSourcePageType is " + rf.CurrentSourcePageType.Name);
+                                        if (rf.BackStack != null)
+                                            foreach (var p in rf.BackStack)
+                                                msg.AppendLine("Back page: " + p.SourcePageType.Name);
+                                        if (rf.ForwardStack != null)
+                                            foreach (var p in rf.ForwardStack)
+                                                msg.AppendLine("Forward page: " + p.SourcePageType.Name);
+                                    }
                                 }
                             }
+
+                            if (ex.Source != null)
+                                msg.AppendLine("Source: " + ex.Source);
+
+                            if (ex.Data != null && ex.Data.Keys.Count > 0)
+                                foreach (var d in ex.Data.Keys)
+                                    msg.AppendLine(d.ToString());
+
+                            if (ex.InnerException != null)
+                                msg.AppendLine(
+                                    $"INNER Exception HResult: {ex.HResult}\nINNER EXCEPTION DETAILS:\n{ex.InnerException}");
+
+                            msg.AppendLine($"Message: {ex.Message}\nException HResult: {ex.HResult}");
+
+                            return msg.ToString();
                         }
-
-                        if (ex.Source != null)
-                            msg.AppendLine("Source: " + ex.Source);
-
-                        if (ex.Data != null && ex.Data.Keys.Count > 0)
-                            foreach (var d in ex.Data.Keys)
-                                msg.AppendLine(d.ToString());
-
-                        if (ex.InnerException != null)
-                            msg.AppendLine(
-                                $"INNER Exception HResult: {ex.HResult}\nINNER EXCEPTION DETAILS:\n{ex.InnerException}");
-
-                        msg.AppendLine($"Message: {ex.Message}\nException HResult: {ex.HResult}");
-
-                        return msg.ToString();
+                        catch (Exception)
+                        {
+                            // Don't care about this exception.  Return original Message.
+                            return ex.Message;
+                        }
                     });
 
             InitializeComponent();
@@ -122,6 +132,8 @@ namespace GoG.WinRT
         /// <param name="args">The launch arguments passed to the application</param>
         protected override Task OnLaunchApplicationAsync(LaunchActivatedEventArgs args)
         {
+            ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.Auto;
+
             // Use the logical name for the view to navigate to. The default convention
             // in the NavigationService will be to append "Page" to the name and look 
             // for that page in a .Views child namespace in the project. IF you want another convention

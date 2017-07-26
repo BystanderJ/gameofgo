@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -255,6 +256,7 @@ namespace GoG.WinRT.ViewModels
             if (resp.ResultCode == GoResultCode.Success && 
                 resp.MoveResult.Status != GoGameStatus.Active)
             {
+                MessageText = "Calculating...";
                 await CalculateArea(true);
             }
             IsBusy = false;
@@ -263,22 +265,22 @@ namespace GoG.WinRT.ViewModels
             if (resp.ResultCode == GoResultCode.Success)
             {
                 AddMoveToHistory(resp.Move, resp.MoveResult);
+                AdjustToState(resp.MoveResult.Status, true);
                 SwapTurns();
                 
-                AdjustToState(resp.MoveResult.Status);
-                var oldStatus = Status;
+                //var oldStatus = Status;
                 if (Status == GoGameStatus.Active)
                     await PlayCurrentUser();
                 // PlayCurrentUser() can change the Status, so we may need to recalc.
-                if (oldStatus != Status)
-                {
-                    IsBusy = true;
-                    MessageText = "Calculating...";
-                    await CalculateArea(Status != GoGameStatus.Active);
-                    IsBusy = false;
-                    MessageText = null;
-                    AdjustToState(Status);
-                }
+                //if (oldStatus != Status)
+                //{
+                //    IsBusy = true;
+                //    //MessageText = "Calculating...";
+                //    await CalculateArea(Status != GoGameStatus.Active);
+                //    IsBusy = false;
+                //    //MessageText = null;
+                //    AdjustToState(Status, true);
+                //}
             }
             else if (resp.ResultCode == GoResultCode.CommunicationError)
                 await HandleCommunicationError("Passing...");
@@ -337,19 +339,19 @@ namespace GoG.WinRT.ViewModels
                 Pieces[position].RaiseMultiplePropertiesChanged();
                 SwapTurns();
 
-                AdjustToState(resp.MoveResult.Status);
-                var oldStatus = Status;
+                AdjustToState(resp.MoveResult.Status, false);
+                //var oldStatus = Status;
                 if (Status == GoGameStatus.Active)
                     await PlayCurrentUser();
-                if (oldStatus != Status)
-                {
-                    IsBusy = true;
-                    MessageText = "Calculating...";
-                    await CalculateArea(Status != GoGameStatus.Active);
-                    IsBusy = false;
-                    MessageText = null;
-                    AdjustToState(Status);
-                }
+                //if (oldStatus != Status)
+                //{
+                //    IsBusy = true;
+                //    //MessageText = "Calculating...";
+                //    await CalculateArea(Status != GoGameStatus.Active);
+                //    IsBusy = false;
+                //    //MessageText = null;
+                //    AdjustToState(Status, true);
+                //}
             }
             else if (resp.ResultCode == GoResultCode.CommunicationError)
                 await HandleCommunicationError("Moving...");
@@ -397,16 +399,16 @@ namespace GoG.WinRT.ViewModels
 
             if (resp.ResultCode == GoResultCode.Success)
             {
-                AdjustToState(resp.MoveResult.Status);
-                await Task.Delay(2000);
+                AdjustToState(resp.MoveResult.Status, false);
+                //await Task.Delay(2000);
                 //AddMoveToHistory(resp.Move, resp.MoveResult);
                 SwapTurns();
                 IsBusy = true;
-                MessageText = "Calculating...";
+                //MessageText = "Calculating...";
                 await CalculateArea(Status != GoGameStatus.Active);
                 IsBusy = false;
-                MessageText = null;
-                AdjustToState(resp.MoveResult.Status);
+                //MessageText = null;
+                //AdjustToState(resp.MoveResult.Status);
             }
             else if (resp.ResultCode == GoResultCode.CommunicationError)
                 await HandleCommunicationError("Resigning...");
@@ -433,7 +435,7 @@ namespace GoG.WinRT.ViewModels
                 return true;
             if (humanColor == GoColor.White && Status == GoGameStatus.BlackWonDueToResignation)
                 return true;
-            var firstHumanMove = History.FirstOrDefault(h => h.Move.Color == humanColor);
+            var firstHumanMove = History?.FirstOrDefault(h => h.Move.Color == humanColor);
             return IsBusy == false &&
                    Pieces != null &&
                    History != null &&
@@ -642,10 +644,9 @@ namespace GoG.WinRT.ViewModels
                         }
                         break;
                     case MoveType.Pass:
-
                         AddMoveToHistory(resp.Move, resp.MoveResult);
                         await InvokeFleetingMessage(CurrentPlayer.Name + " passes.", 2000);
-                        if (Status != GoGameStatus.Active)
+                        if (resp.MoveResult.Status != GoGameStatus.Active)
                         {
                             IsBusy = true;
                             MessageText = "Calculating...";
@@ -653,7 +654,7 @@ namespace GoG.WinRT.ViewModels
                             IsBusy = false;
                             MessageText = null;
                         }
-                        AdjustToState(resp.MoveResult.Status);
+                        AdjustToState(resp.MoveResult.Status, true);
                         SwapTurns();
                         if (Status == GoGameStatus.Active)
                         {
@@ -662,13 +663,12 @@ namespace GoG.WinRT.ViewModels
                         }
                         break;
                     case MoveType.Resign:
-                        AdjustToState(resp.MoveResult.Status);
-                        await Task.Delay(2000);
                         IsBusy = true;
-                        MessageText = "Calculating...";
+                        AdjustToState(resp.MoveResult.Status, false);
+                        //MessageText = "Calculating...";
                         await CalculateArea(true);
                         IsBusy = false;
-                        AdjustToState(Status);
+                        AdjustToState(Status, false);
                         SwapTurns();
                         break;
                 }
@@ -869,15 +869,15 @@ namespace GoG.WinRT.ViewModels
                             break;
                         RunOnUIThread(async () =>
                         {
-                            AdjustToState(resp.GameState.Status);
+                            AdjustToState(resp.GameState.Status, false);
                             if (Status == GoGameStatus.Active)
                                 await PlayCurrentUser();
                             IsBusy = true;
-                            MessageText = "Calculating...";
+                            //MessageText = "Calculating...";
                             await CalculateArea(Status != GoGameStatus.Active);
                             IsBusy = false;
-                            MessageText = null;
-                            AdjustToState(Status);
+                            //MessageText = null;
+                            AdjustToState(Status, true);
                         });
                         break;
                 }
@@ -887,6 +887,7 @@ namespace GoG.WinRT.ViewModels
                 await DisplayErrorCode(resp.ResultCode);
                 GoBackDeferred();
             }
+            RaiseCommandsChanged();
         }
 
         // This method is used by LoadGameFromServerAsync() to call itself recursively
@@ -918,7 +919,7 @@ namespace GoG.WinRT.ViewModels
             RaisePropertyChanged(nameof(WhoseTurn));
             CurrentTurnColor = _players[_whoseTurn].Color;
 
-            AdjustToState(_activeGame.Status);
+            AdjustToState(_activeGame.Status, false);
 
             // Note that setting BoardEdgeSize triggers the board control to generate.
             BoardEdgeSize = _activeGame.Size;
@@ -971,34 +972,34 @@ namespace GoG.WinRT.ViewModels
             RaiseCommandsChanged();
         }
 
-        private void AdjustToState(GoGameStatus status)
+        private void AdjustToState(GoGameStatus status, bool showFinalScore)
         {
             Status = status;
 
             var humanPlayer = Player1.PlayerType == PlayerType.Human ? Player1 : Player2;
             var aiPlayer = Player1.PlayerType == PlayerType.Human ? Player2 : Player1;
 
-            var margin = humanPlayer.Score - aiPlayer.Score;
+            var margin = showFinalScore ? Math.Abs(humanPlayer.Score - aiPlayer.Score).ToString(CultureInfo.CurrentCulture) : "???";
 
             switch (Status)
             {
                 case GoGameStatus.Ended:
-                    if (margin > 0)
-                        MessageText = "You win by " + margin + "!";
+                    if (humanPlayer.Score > aiPlayer.Score)
+                        MessageText = $"You win by {margin} :)";
                     else
-                        MessageText = aiPlayer.Name + " wins by " + -margin + ".";
+                        MessageText = $"{aiPlayer.Name} wins by {margin} :(";
                     break;
                 case GoGameStatus.BlackWonDueToResignation:
                     if (humanPlayer.Color == GoColor.Black)
-                        MessageText = aiPlayer.Name + " resigned.  You win!";
+                        MessageText = aiPlayer.Name + " resigned.  You win! :)";
                     else
-                        MessageText = "You resigned.  " + aiPlayer.Name + " wins.";
+                        MessageText = "You resigned.  " + aiPlayer.Name + " wins. :(";
                     break;
                 case GoGameStatus.WhiteWonDueToResignation:
                     if (humanPlayer.Color == GoColor.White)
-                        MessageText = aiPlayer.Name + " resigned.  You win!";
+                        MessageText = aiPlayer.Name + " resigned.  You win! :)";
                     else
-                        MessageText = "You resigned.  " + aiPlayer.Name + " wins.";
+                        MessageText = "You resigned.  " + aiPlayer.Name + " wins. :(";
                     break;
             }
         }

@@ -145,6 +145,7 @@
     <Compile Include="ViewModels\PlayerSettingsViewModel.cs" />
     <Compile Include="ViewModels\PlayerViewModel.cs" />
     <Compile Include="ViewModels\MainPageViewModel.cs" />
+    <Compile Include="ViewModels\MultiPlayerPageViewModel.cs" />
     <Compile Include="ViewModels\SinglePlayerPageViewModel.cs" />
     <Compile Include="Views\GamePage.xaml.cs">
       <DependentUpon>GamePage.xaml</DependentUpon>
@@ -156,6 +157,9 @@
     <Compile Include="Views\NavigationAwarePage.cs" />
     <Compile Include="Views\MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\MultiPlayerPage.xaml.cs">
+      <DependentUpon>MultiPlayerPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\SinglePlayerPage.xaml.cs">
       <DependentUpon>SinglePlayerPage.xaml</DependentUpon>
@@ -224,6 +228,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\MainPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\MultiPlayerPage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

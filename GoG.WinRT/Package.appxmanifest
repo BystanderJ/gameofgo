@@ -15,7 +15,7 @@
   </Resources>
   <Applications>
     <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="GoG.WinRT.App">
-      <uap:VisualElements DisplayName="The Game of Go 2" Description="According to chess master Emanuel Lasker: &quot;The rules of Go are so elegant, organic, and rigorously logical that if intelligent life forms exist elsewhere in the universe, they almost certainly play Go.&quot;  Go is an ancient Chinese/Japanese board game.  Players place black or white stones, with the goal to surround and capture their opponent's pieces and territory." BackgroundColor="#000000" Square150x150Logo="Assets\Square150x150Logo.jpg" Square44x44Logo="Assets\Square44x44Logo.png">
+      <uap:VisualElements DisplayName="The Game of Go 2" Description="According to chess master Emanuel Lasker: &quot;The rules of Go are so elegant, organic, and rigorously logical that if intelligent life forms exist elsewhere in the universe, they almost certainly play Go.&quot;  Go is an ancient Chinese board game.  Players place black or white stones, with the goal to surround and capture their opponent's pieces and territory.  Now with internet multi-player, accurate area and dead stone analysis, and a much improved end game!" BackgroundColor="#000000" Square150x150Logo="Assets\Square150x150Logo.jpg" Square44x44Logo="Assets\Square44x44Logo.png">
         <uap:InitialRotationPreference>
           <uap:Rotation Preference="portrait" />
           <uap:Rotation Preference="landscape" />
