@@ -42,7 +42,7 @@
                     x:Name="PageTitle"
                     Grid.Column="1"
                     Style="{StaticResource PageHeaderTextStyle}"
-                    Text="The Game of Go" />
+                    Text="The Game of Go 2" />
             </Grid>
 
             <StackPanel

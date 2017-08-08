@@ -219,3 +219,5 @@ Thumbs.db
 Desktop.ini
 *.VC.opendb
 *.VC.db
+
+Secrets.cs

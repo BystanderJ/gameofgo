@@ -135,7 +135,9 @@
     <Compile Include="Services\FuegoGameEngine.cs" />
     <Compile Include="Services\IGameEngine.cs" />
     <Compile Include="Services\IRepository.cs" />
+    <Compile Include="Services\IServerConnection.cs" />
     <Compile Include="Services\ISessionStateManager.cs" />
+    <Compile Include="Services\ServerConnection.cs" />
     <Compile Include="Services\SqliteRepository.cs" />
     <Compile Include="ViewModels\BaseViewModel.cs" />
     <Compile Include="ViewModels\Enums.cs" />
@@ -146,6 +148,7 @@
     <Compile Include="ViewModels\PlayerViewModel.cs" />
     <Compile Include="ViewModels\MainPageViewModel.cs" />
     <Compile Include="ViewModels\MultiPlayerPageViewModel.cs" />
+    <Compile Include="ViewModels\LobbyPageViewModel.cs" />
     <Compile Include="ViewModels\SinglePlayerPageViewModel.cs" />
     <Compile Include="Views\GamePage.xaml.cs">
       <DependentUpon>GamePage.xaml</DependentUpon>
@@ -160,6 +163,9 @@
     </Compile>
     <Compile Include="Views\MultiPlayerPage.xaml.cs">
       <DependentUpon>MultiPlayerPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\LobbyPage.xaml.cs">
+      <DependentUpon>LobbyPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\SinglePlayerPage.xaml.cs">
       <DependentUpon>SinglePlayerPage.xaml</DependentUpon>
@@ -232,6 +238,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\MultiPlayerPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Views\LobbyPage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

@@ -1,14 +1,12 @@
-﻿using GoG.WinRT.ViewModels;
-using Windows.Foundation;
+﻿using Windows.Foundation;
 using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
-using Windows.UI.Xaml.Controls;
 
 namespace GoG.WinRT.Views
 {
-    public sealed partial class MultiPlayerPage : NavigationAwarePage
+    public sealed partial class LobbyPage : NavigationAwarePage
     {
-        public MultiPlayerPage()
+        public LobbyPage()
         {
             InitializeComponent();
 
@@ -35,17 +33,23 @@ namespace GoG.WinRT.Views
                 PageTitle.Style = Application.Current.Resources["PageHeaderTextStyle"] as Style;
             }
         }
+        
+        //private void KomiTB_OnTextChanged(object sender, TextChangedEventArgs e)
+        //{
+        //    if (KomiTB.Text.Length == 0) return;
 
-        private void NameTB_OnTextChanged(object sender, TextChangedEventArgs e)
-        {
-            var vm = DataContext as MultiPlayerPageViewModel;
-            if (vm != null)
-                vm.Name = NameTb.Text;
-        }
+        //    var text = KomiTB.Text;
 
-        private void JoinLobbyButton_OnClick(object sender, RoutedEventArgs e)
-        {
-            NameTb.Focus(FocusState.Programmatic);
-        }
+        //    decimal result;
+        //    var isValid = decimal.TryParse(text, out result);
+        //    if (isValid) return;
+
+        //    KomiTB.Text = text.Remove(text.Length - 1);
+        //    KomiTB.SelectionStart = text.Length;
+
+        //    var vm = DataContext as SinglePlayerPageViewModel;
+        //    if (vm != null)
+        //        vm.Komi = result;
+        //}
     }
 }

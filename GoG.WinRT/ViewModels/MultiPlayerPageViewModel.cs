@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using GoG.Infrastructure.Engine;
-using GoG.Infrastructure.Services.Engine;
+using GoG.Infrastructure.Services.Multiplayer;
 using Prism.Commands;
 using Prism.Windows.AppModel;
 using GoG.WinRT.Services;
@@ -16,7 +16,7 @@ namespace GoG.WinRT.ViewModels
     {
         #region Ctor
         public MultiPlayerPageViewModel(INavigationService navigationService,
-            ISessionStateService sessionStateService, 
+            ISessionStateService sessionStateService,
             IGameEngine engine) : base(navigationService, sessionStateService, engine)
         {
             _boardEdgeSize = 9;
@@ -26,6 +26,7 @@ namespace GoG.WinRT.ViewModels
                     new Pair("13x13 (Medium)", 13),
                     new Pair("19x19 (Full Size)", 19)
                 };
+
             //_secondsPerTurn = 15;
             //_seconds = new List<Pair>
             //    {
@@ -37,6 +38,7 @@ namespace GoG.WinRT.ViewModels
             //    };
             //for (int i = 3; i <= 180; i++)
             //    _seconds.Add(new Pair(i + " Seconds", i));
+
             _difficultyLevel = 6;
             _difficulties = new List<Pair>
                 {
@@ -57,9 +59,8 @@ namespace GoG.WinRT.ViewModels
                     new Pair("Black", (int)GoColor.Black),
                     new Pair("White", (int)GoColor.White)
                 };
-            _name = "Homer";
+            _name = "";
             //_komi = (decimal)6.5;
-            
         }
         #endregion Ctor
 
@@ -85,190 +86,104 @@ namespace GoG.WinRT.ViewModels
         public bool IsActiveGame => _activeGame != Guid.Empty;
         #endregion IsActiveGame
 
-        //#region ActiveGameState
-        //private GoGameState _activeGameState;
-        //public GoGameState ActiveGameState
-        //{
-        //    get { return _activeGameState; }
-        //    set { _activeGameState = value; OnPropertyChanged("ActiveGameState"); }
-        //}
-        //#endregion ActiveGameState
-
+        #region Name
         private string _name;
-        [RestorableState]
         [Required(ErrorMessage = "Name is required.")]
         public string Name
         {
             get => _name;
-            set { SetProperty(ref _name, value); PlayCommand.RaiseCanExecuteChanged(); }
+            set { SetProperty(ref _name, value); EnterLobbyCommand.RaiseCanExecuteChanged(); }
         }
+        #endregion Name
 
+        #region Sizes
         private List<Pair> _sizes;
         public List<Pair> Sizes
         {
             get => _sizes; set => SetProperty(ref _sizes, value);
         }
+        #endregion Sizes
 
-        //#region Seconds
-        //private List<Pair> _seconds;
-        //public List<Pair> Seconds
-        //{
-        //    get { return _seconds; }
-        //    set { _seconds = value; OnPropertyChanged("Seconds"); }
-        //}
-        //#endregion Seconds
-
+        #region Difficulties
         private List<Pair> _difficulties;
         public List<Pair> Difficulties
         {
             get => _difficulties; set => SetProperty(ref _difficulties, value);
         }
+        #endregion Difficulties
 
+        #region BoardEdgeSize
         private int _boardEdgeSize;
-        [RestorableState]
         public int BoardEdgeSize
         {
             get => _boardEdgeSize; set => SetProperty(ref _boardEdgeSize, value);
         }
+        #endregion BoardEdgeSize
 
+        #region DifficultyLevel
         private int _difficultyLevel;
-        [RestorableState]
         public int DifficultyLevel
         {
             get => _difficultyLevel; set => SetProperty(ref _difficultyLevel, value);
         }
+        #endregion DifficultyLevel
 
+        #region Colors
         private List<Pair> _colors;
         public List<Pair> Colors
         {
             get => _colors; set => SetProperty(ref _colors, value);
         }
+        #endregion Colors
 
+        #region Color
         private int _color;
-        [RestorableState]
         public int Color
         {
             get => _color; set => SetProperty(ref _color, value);
         }
-        
+        #endregion Color
+
         #endregion Properties
 
         #region Commands
-        
-        #region PlayCommand
-        private DelegateCommand _playCommand;
-        public DelegateCommand PlayCommand => _playCommand ?? (_playCommand = new DelegateCommand(ExecutePlay, CanPlay));
-        public bool CanPlay() => !string.IsNullOrWhiteSpace(Name);
-        public void ExecutePlay()
-        {
-            // Start a new game by calling server, then go to game page.
-            StartNewGame();
-        }
-        #endregion PlayCommand
-       
-        #region ResumeCommand
-        private DelegateCommand _resumeCommand;
-        public DelegateCommand ResumeCommand => _resumeCommand ?? (_resumeCommand = new DelegateCommand(ExecuteResume, CanResume));
-        public bool CanResume()
-        {
-            return true;
-        }
-        public void ExecuteResume()
-        {
-            NavigationService.Navigate("Game", ActiveGame);
-        }
-        #endregion ResumeCommand
 
+        #region EnterLobbyCommand
+        private DelegateCommand _enterLobbyCommand;
+        public DelegateCommand EnterLobbyCommand => _enterLobbyCommand ?? (_enterLobbyCommand = new DelegateCommand(ExecuteEnterLobby, CanEnterLobby));
+        public bool CanEnterLobby() => true;
+        public async void ExecuteEnterLobby()
+        {
+            Name = Name.Trim();
+
+            if (string.IsNullOrWhiteSpace(Name))
+            {
+                await DisplayMessage("Name", "Please enter your name.  Make it unique!");
+                return;
+            }
+
+
+
+            var userPrefs = new UserPrefs()
+            {
+                Name = Name,
+                PreferredBoardSize = BoardEdgeSize,
+                SkillLevel = DifficultyLevel
+            };
+            
+            NavigationService.Navigate("Lobby", userPrefs);
+        }
+        #endregion EnterLobbyCommand
+        
         #endregion Commands
 
         #region Virtuals
-        
+
         #endregion Virtuals
 
         #region Helpers
-
-        private async void StartNewGame()
-        {
-            try
-            {
-                var success = false;
-                GoResponse resp = null;
-
-                for (int tries = 0; !AbortOperation && !success && tries < 5; tries++)
-                {
-                    BusyMessage = "Starting game...";
-                    IsBusy = true;
-
-                    // Create game from user's selections.
-                    var p1 = new GoPlayer();
-                    var p2 = new GoPlayer()
-                    {
-                        Komi = 6.5M
-                    };
-                    if (Color == (int)GoColor.Black)
-                    {
-                        p1.Name = Name;
-                        p1.PlayerType = PlayerType.Human;
-
-                        p2.Name = "Fuego";
-                        p2.PlayerType = PlayerType.Ai;
-                        p2.Level = DifficultyLevel;
-                    }
-                    else
-                    {
-                        p2.Name = Name;
-                        p2.PlayerType = PlayerType.Human;
-
-                        p1.Name = "Fuego";
-                        p1.PlayerType = PlayerType.Ai;
-                        p1.Level = DifficultyLevel;
-                    }
-                    var tmpState = new GoGame(
-                        (byte) BoardEdgeSize,
-                        p1, p2,
-                        GoGameStatus.Active,
-                        GoColor.Black,
-                        "",
-                        "",
-                        new List<GoMoveHistoryItem>());
-                    resp = await GameEngine.CreateGameAsync(tmpState);
-                    BusyMessage = null;
-                    IsBusy = false;
-
-                    if (resp.ResultCode == GoResultCode.Success)
-                    {
-                        if (ActiveGame != Guid.Empty)
-                            await GameEngine.DeleteGameAsync(ActiveGame);
-
-                        success = true;
-                        ActiveGame = tmpState.Id;
-                    }
-                }
-
-                if (AbortOperation)
-                    return;
-
-                if (success)
-                    NavigationService.Navigate("Game", ActiveGame);
-                else
-                {
-                    if (resp != null)
-                        await DisplayErrorCode(resp.ResultCode);
-                    else
-                        await DisplayErrorCode(GoResultCode.InternalError);
-                }
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-            finally
-            {
-                BusyMessage = null;
-                IsBusy = false;
-            }
-        }
         
+
         #endregion Helpers
     }
 }

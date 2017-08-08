@@ -158,6 +158,8 @@ namespace GoG.WinRT
             var repo = Container.Resolve<IRepository>();
             repo.Initialize();
 
+            //var conn = Container
+
             return Task.FromResult<object>(null);
         }
         
@@ -172,6 +174,7 @@ namespace GoG.WinRT
             base.ConfigureContainer();
 
             // Register any app specific types with the container
+            Container.RegisterType<IServerConnection, ServerConnection>(new ContainerControlledLifetimeManager());
             Container.RegisterType<IRepository, SqliteRepository>(new ContainerControlledLifetimeManager());
             Container.RegisterType<IGameEngine, FuegoGameEngine>(new ContainerControlledLifetimeManager());
         }
