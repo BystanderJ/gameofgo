@@ -1,7 +1,8 @@
 using System;
 using System.Threading.Tasks;
-using GoG.Infrastructure.Engine;
-using GoG.Infrastructure.Services.Engine;
+using GoG.Shared.Engine;
+using GoG.Shared.Services.Engine;
+
 
 namespace GoG.WinRT.Services
 {

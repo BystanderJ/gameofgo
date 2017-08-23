@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Windows.UI.Xaml;
 
-namespace AdventureWorks.Shopper.Behaviors
+namespace GoG.WinRT.Behaviors
 {
     // Documentation on validating user input is at http://go.microsoft.com/fwlink/?LinkID=288817&clcid=0x409
 

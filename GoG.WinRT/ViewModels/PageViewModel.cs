@@ -113,7 +113,7 @@ namespace GoG.WinRT.ViewModels
         {
             // Note: Calling NavService.GoBack() in context of an existing navigation action causes
             // an exception.  Hence the need for this helper method.
-            RunOnUIThread(() => NavigationService.GoBack());
+            RunOnUiThread(() => NavigationService.GoBack());
         }
         #endregion Helpers
     }

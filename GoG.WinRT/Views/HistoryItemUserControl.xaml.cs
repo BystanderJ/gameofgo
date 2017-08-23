@@ -1,7 +1,5 @@
-﻿using FuegoLib;
-using GoG.WinRT.Common;
-using Windows.UI.Xaml;
-using GoG.Infrastructure.Engine;
+﻿using Windows.UI.Xaml;
+using GoG.Shared.Engine;
 
 namespace GoG.WinRT.Views
 {
@@ -14,7 +12,7 @@ namespace GoG.WinRT.Views
             DataContextChanged += HistoryItemUserControl_DataContextChanged;
         }
 
-        void HistoryItemUserControl_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs e)
+        private void HistoryItemUserControl_DataContextChanged(FrameworkElement sender, DataContextChangedEventArgs e)
         {
             if (e.NewValue == null)
                 return;

@@ -1,6 +1,6 @@
 ﻿using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using GoG.Infrastructure.Engine;
+using GoG.Shared.Engine;
 
 namespace GoG.Board
 {

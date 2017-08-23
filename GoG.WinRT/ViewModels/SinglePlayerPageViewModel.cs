@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using GoG.Infrastructure.Engine;
-using GoG.Infrastructure.Services.Engine;
+using GoG.Shared.Engine;
+using GoG.Shared.Services.Engine;
 using Prism.Commands;
 using Prism.Windows.AppModel;
 using GoG.WinRT.Services;

@@ -1,4 +1,5 @@
-﻿using GoG.Infrastructure.Engine;
+﻿
+using GoG.Shared.Engine;
 using Prism.Windows.Mvvm;
 
 // ReSharper disable ExplicitCallerInfoArgument

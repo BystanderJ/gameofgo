@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using GoG.WinRT.Model;
-using GoG.Infrastructure.Engine;
+
 
 namespace GoG.WinRT.Migrations
 {

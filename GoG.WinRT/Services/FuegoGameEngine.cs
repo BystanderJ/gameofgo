@@ -5,9 +5,9 @@ using System.Diagnostics;
 using System.Globalization; 
 using System.Linq;
 using System.Threading.Tasks;
-using GoG.Infrastructure;
-using GoG.Infrastructure.Engine;
-using GoG.Infrastructure.Services.Engine;
+using GoG.Shared;
+using GoG.Shared.Engine;
+using GoG.Shared.Services.Engine;
 
 // ReSharper disable RedundantCatchClause
 

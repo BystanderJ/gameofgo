@@ -2,8 +2,8 @@
 using System.Threading.Tasks;
 using Windows.UI.Core;
 using Windows.UI.Popups;
-using GoG.Infrastructure;
-using GoG.Infrastructure.Engine;
+using GoG.Shared;
+using GoG.Shared.Engine;
 using Prism.Windows.Mvvm;
 
 namespace GoG.WinRT.ViewModels
@@ -19,7 +19,7 @@ namespace GoG.WinRT.ViewModels
             Dispatcher = CoreWindow.GetForCurrentThread().Dispatcher;
         }
 
-        protected void RunOnUIThread(Action a)
+        protected void RunOnUiThread(Action a)
         {
             Dispatcher?.RunAsync(CoreDispatcherPriority.Low, () => a());
         }

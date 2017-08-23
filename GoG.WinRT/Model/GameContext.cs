@@ -1,4 +1,4 @@
-﻿using GoG.Infrastructure.Engine;
+﻿using GoG.Shared.Engine;
 using Microsoft.EntityFrameworkCore;
 
 namespace GoG.WinRT.Model
@@ -9,7 +9,7 @@ namespace GoG.WinRT.Model
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite("Data Source=temp2.db");
+            optionsBuilder.UseSqlite("Data Source=temp3.db");
         }
     }
 }

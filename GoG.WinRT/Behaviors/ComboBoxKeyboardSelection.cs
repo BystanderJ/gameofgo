@@ -2,9 +2,8 @@ using System;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
-using GoG.WinRT.Behaviors;
 
-namespace AdventureWorks.Shopper.Behaviors
+namespace GoG.WinRT.Behaviors
 {
     public static class ComboBoxKeyboardSelection
     {

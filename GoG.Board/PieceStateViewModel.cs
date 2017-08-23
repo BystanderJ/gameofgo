@@ -1,5 +1,5 @@
 ﻿using System;
-using GoG.Infrastructure.Engine;
+using GoG.Shared.Engine;
 using Prism.Windows.Mvvm;
 
 namespace GoG.Board

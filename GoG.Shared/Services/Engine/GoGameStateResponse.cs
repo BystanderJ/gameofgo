@@ -1,0 +1,22 @@
+﻿using GoG.Shared.Engine;
+
+namespace GoG.Shared.Services.Engine
+{
+    /// <summary>
+    /// Full game / board state to be sent to the client on request.
+    /// </summary>
+    public class GoGameStateResponse : GoResponse
+    {
+        // This empty constructor is so WCF's DataContractSerializer is able to build an instance of this type.
+        public GoGameStateResponse()
+        {
+        }
+
+        public GoGameStateResponse(GoResultCode resultCode, GoGame gameState) : base(resultCode)
+        {
+            GameState = gameState;
+        }
+
+        public GoGame GameState { get; set; }
+    }
+}

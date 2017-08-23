@@ -18,139 +18,141 @@
         <winRt:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     </local:NavigationAwarePage.Resources>
 
-    <Grid Style="{StaticResource LayoutRootStyle}">
-        <Grid.Background>
-            <ImageBrush
-                AlignmentX="Left"
-                AlignmentY="Top"
-                ImageSource="/Assets/game.jpg"
-                Opacity=".4"
-                Stretch="UniformToFill" />
-        </Grid.Background>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="140" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <!--  Back button and page title  -->
-        <Grid Margin="30,0,0,0">
-            <TextBlock
-                x:Name="PageTitle"
-                Style="{StaticResource PageHeaderTextStyle}"
-                Text="Multi Player" />
-        </Grid>
-
-        <Grid
-            x:Name="OptionsGrid"
-            Grid.Row="1"
-            VerticalAlignment="Top">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+    <ScrollViewer>
+        <Grid Style="{StaticResource LayoutRootStyle}">
+            <Grid.Background>
+                <ImageBrush
+                    AlignmentX="Left"
+                    AlignmentY="Top"
+                    ImageSource="/Assets/game.jpg"
+                    Opacity=".4"
+                    Stretch="UniformToFill" />
+            </Grid.Background>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition />
+                <RowDefinition Height="140" />
+                <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <TextBlock
-                Grid.Row="0"
-                Grid.Column="0"
-                Margin="0,2,0,0"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Center"
-                FontSize="18"
-                Text="Board Size:" />
-            <ComboBox
-                Grid.Row="0"
-                Grid.Column="1"
-                Width="160"
-                Margin="10,0,0,0"
-                HorizontalAlignment="Left"
-                DisplayMemberPath="Desc"
-                FontSize="18"
-                ItemsSource="{Binding Sizes}"
-                SelectedValue="{Binding BoardEdgeSize, Mode=TwoWay}"
-                SelectedValuePath="Value" />
-            <TextBlock
-                Grid.Row="1"
-                Grid.Column="0"
-                Margin="10,17,0,0"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Center"
-                FontSize="18"
-                Text="Your Skill Level:" />
-            <ComboBox
-                Grid.Row="1"
-                Grid.Column="1"
-                Width="160"
-                Margin="10,15,0,0"
-                HorizontalAlignment="Left"
-                DisplayMemberPath="Desc"
-                FontSize="18"
-                ItemsSource="{Binding Difficulties}"
-                SelectedValue="{Binding DifficultyLevel, Mode=TwoWay}"
-                SelectedValuePath="Value" />
-            <TextBlock
-                Grid.Row="2"
-                Grid.Column="0"
-                Margin="0,17,0,0"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Center"
-                FontSize="18"
-                Text="Your Name:" />
-            <TextBox
-                x:Name="NameTb"
-                Grid.Row="2"
-                Grid.Column="1"
-                Width="160"
-                Margin="10,15,0,0"
-                HorizontalAlignment="Left"
-                FontSize="18"
-                MaxLength="20"
-                Text="{Binding Name, Mode=TwoWay}"
-                TextChanged="NameTB_OnTextChanged" />
-
-            <Button
-                x:Name="JoinLobbyButton"
-                Grid.Row="3"
-                Grid.Column="1"
-                Width="125"
-                Margin="10,20"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Center"
-                Click="JoinLobbyButton_OnClick"
-                Command="{Binding EnterLobbyCommand}"
-                Content="Join Lobby"
-                FontSize="18" />
-        </Grid>
-
-        <Border
-            Grid.Row="1"
-            Grid.RowSpan="8"
-            Grid.ColumnSpan="8"
-            Background="#D8000000"
-            Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}">
-            <StackPanel
-                Margin="0,0,0,0"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center">
-                <ProgressRing
-                    Width="40"
-                    Height="40"
-                    HorizontalAlignment="Center"
-                    Foreground="White"
-                    IsActive="{Binding IsBusy}" />
+            <!--  Back button and page title  -->
+            <Grid Margin="30,0,0,0">
                 <TextBlock
+                    x:Name="PageTitle"
+                    Style="{StaticResource PageHeaderTextStyle}"
+                    Text="Multi Player" />
+            </Grid>
+
+            <Grid
+                x:Name="OptionsGrid"
+                Grid.Row="1"
+                VerticalAlignment="Top">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+
+                <TextBlock
+                    Grid.Row="0"
+                    Grid.Column="0"
+                    Margin="0,2,0,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    FontSize="18"
+                    Text="Board Size:" />
+                <ComboBox
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Width="160"
+                    Margin="10,0,0,0"
+                    HorizontalAlignment="Left"
+                    DisplayMemberPath="Desc"
+                    FontSize="18"
+                    ItemsSource="{Binding Sizes}"
+                    SelectedValue="{Binding BoardEdgeSize, Mode=TwoWay}"
+                    SelectedValuePath="Value" />
+                <TextBlock
+                    Grid.Row="1"
+                    Grid.Column="0"
+                    Margin="10,17,0,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    FontSize="18"
+                    Text="Your Skill Level:" />
+                <ComboBox
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Width="160"
+                    Margin="10,15,0,0"
+                    HorizontalAlignment="Left"
+                    DisplayMemberPath="Desc"
+                    FontSize="18"
+                    ItemsSource="{Binding Difficulties}"
+                    SelectedValue="{Binding DifficultyLevel, Mode=TwoWay}"
+                    SelectedValuePath="Value" />
+                <TextBlock
+                    Grid.Row="2"
+                    Grid.Column="0"
+                    Margin="0,17,0,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    FontSize="18"
+                    Text="Your Name:" />
+                <TextBox
+                    x:Name="NameTb"
+                    Grid.Row="2"
+                    Grid.Column="1"
+                    Width="160"
+                    Margin="10,15,0,0"
+                    HorizontalAlignment="Left"
+                    FontSize="18"
+                    MaxLength="20"
+                    Text="{Binding Name, Mode=TwoWay}"
+                    TextChanged="NameTB_OnTextChanged" />
+
+                <Button
+                    x:Name="JoinLobbyButton"
+                    Grid.Row="3"
+                    Grid.Column="1"
+                    Width="125"
+                    Margin="10,20"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Click="JoinLobbyButton_OnClick"
+                    Command="{Binding EnterLobbyCommand}"
+                    Content="Join Lobby"
+                    FontSize="18" />
+            </Grid>
+
+            <Border
+                Grid.Row="1"
+                Grid.RowSpan="8"
+                Grid.ColumnSpan="8"
+                Background="#D8000000"
+                Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel
+                    Margin="0,0,0,0"
                     HorizontalAlignment="Center"
-                    FontSize="26"
-                    FontWeight="Normal"
-                    Text="{Binding BusyMessage}" />
-            </StackPanel>
-        </Border>
-    </Grid>
+                    VerticalAlignment="Center">
+                    <ProgressRing
+                        Width="40"
+                        Height="40"
+                        HorizontalAlignment="Center"
+                        Foreground="White"
+                        IsActive="{Binding IsBusy}" />
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        FontSize="26"
+                        FontWeight="Normal"
+                        Text="{Binding BusyMessage}" />
+                </StackPanel>
+            </Border>
+        </Grid>
+    </ScrollViewer>
 </local:NavigationAwarePage>

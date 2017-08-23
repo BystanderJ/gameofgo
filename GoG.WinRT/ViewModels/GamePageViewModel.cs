@@ -1,7 +1,4 @@
 ﻿using GoG.Board;
-using GoG.Infrastructure;
-using GoG.Infrastructure.Engine;
-using GoG.Infrastructure.Services.Engine;
 using GoG.WinRT.Services;
 using Prism.Commands;
 using Prism.Windows.AppModel;
@@ -13,6 +10,9 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
+using GoG.Shared;
+using GoG.Shared.Engine;
+using GoG.Shared.Services.Engine;
 
 // ReSharper disable RedundantCatchClause
 // ReSharper disable ExplicitCallerInfoArgument
@@ -867,7 +867,7 @@ namespace GoG.WinRT.ViewModels
                     case GoOperation.Idle:
                         if (AbortOperation)
                             break;
-                        RunOnUIThread(async () =>
+                        RunOnUiThread(async () =>
                         {
                             AdjustToState(resp.GameState.Status, false);
                             if (Status == GoGameStatus.Active)
@@ -903,7 +903,7 @@ namespace GoG.WinRT.ViewModels
                          if (!AbortOperation)
                              Task.Delay(delay).Wait();
                          if (!AbortOperation)
-                             RunOnUIThread(() => LoadGameFromEngineAsync(msg));
+                             RunOnUiThread(() => LoadGameFromEngineAsync(msg));
                      });
         }
 

@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System;
-using GoG.Infrastructure;
 using System.Linq;
 using System.Windows.Input;
 using Windows.UI.Xaml.Media.Animation;
@@ -14,9 +13,8 @@ using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Shapes;
 using GoG.Board.Extensions;
-using System.Threading.Tasks;
-using Windows.UI.Core;
-using GoG.Infrastructure.Engine;
+using GoG.Shared;
+using GoG.Shared.Engine;
 
 namespace GoG.Board
 {

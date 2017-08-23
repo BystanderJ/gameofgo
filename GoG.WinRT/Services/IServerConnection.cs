@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using GoG.Infrastructure.Services.Multiplayer;
+using GoG.Shared.Services.Multiplayer;
+
 
 namespace GoG.WinRT.Services
 {
@@ -35,6 +35,5 @@ namespace GoG.WinRT.Services
         
         event Action<UserPrefs> UserConnected;
         event Action<string> UserDisconnected;
-        
     }
 }

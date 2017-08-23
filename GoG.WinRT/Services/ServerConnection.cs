@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using GoG.Infrastructure;
-using GoG.Infrastructure.Services.Multiplayer;
+using GoG.Shared.Services.Multiplayer;
 using Microsoft.AspNet.SignalR.Client;
 
 namespace GoG.WinRT.Services
@@ -32,8 +31,7 @@ namespace GoG.WinRT.Services
                 return;
             _isInitialized = true;
 
-            var url = Secrets.GoHubUrl;
-            _hubConnection = new HubConnection(url);
+            _hubConnection = new HubConnection(Secrets.GoHubUrl);
             _goHub = _hubConnection.CreateHubProxy("GoHub");
 
             _goHub.On(nameof(UserConnected), (UserPrefs user) => UserConnected?.Invoke(user));
@@ -55,7 +53,7 @@ namespace GoG.WinRT.Services
             if (_hubConnection.State == ConnectionState.Connected)
                 _hubConnection.Stop();
             while (_hubConnection.State == ConnectionState.Connected)
-                await Task.Delay(200);
+                await Task.Delay(333);
             await _hubConnection.Start();
             await _goHub.Invoke("EnterLobby", userPrefs);
         }

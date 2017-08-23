@@ -88,9 +88,9 @@
       <Project>{65123dbc-b6db-419e-9934-a8727341977f}</Project>
       <Name>GoG.Board</Name>
     </ProjectReference>
-    <ProjectReference Include="..\GoG.Infrastructure\GoG.Infrastructure.csproj">
-      <Project>{1769bdfd-8773-4bc4-8935-aa85366ca342}</Project>
-      <Name>GoG.Infrastructure</Name>
+    <ProjectReference Include="..\GoG.Shared\GoG.Shared.csproj">
+      <Project>{d3bc55f9-683e-4858-9996-cf3ce8e929b8}</Project>
+      <Name>GoG.Shared</Name>
     </ProjectReference>
     <ProjectReference Include="..\Prism\Prism.csproj">
       <Project>{e6c50355-d01e-4caa-884d-d7929861315c}</Project>
@@ -132,6 +132,7 @@
     </Compile>
     <Compile Include="Migrations\GameContextModelSnapshot.cs" />
     <Compile Include="Model\GameContext.cs" />
+    <Compile Include="Secrets.cs" />
     <Compile Include="Services\FuegoGameEngine.cs" />
     <Compile Include="Services\IGameEngine.cs" />
     <Compile Include="Services\IRepository.cs" />
@@ -148,7 +149,6 @@
     <Compile Include="ViewModels\PlayerViewModel.cs" />
     <Compile Include="ViewModels\MainPageViewModel.cs" />
     <Compile Include="ViewModels\MultiPlayerPageViewModel.cs" />
-    <Compile Include="ViewModels\LobbyPageViewModel.cs" />
     <Compile Include="ViewModels\SinglePlayerPageViewModel.cs" />
     <Compile Include="Views\GamePage.xaml.cs">
       <DependentUpon>GamePage.xaml</DependentUpon>
@@ -163,9 +163,6 @@
     </Compile>
     <Compile Include="Views\MultiPlayerPage.xaml.cs">
       <DependentUpon>MultiPlayerPage.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Views\LobbyPage.xaml.cs">
-      <DependentUpon>LobbyPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\SinglePlayerPage.xaml.cs">
       <DependentUpon>SinglePlayerPage.xaml</DependentUpon>
@@ -238,10 +235,6 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\MultiPlayerPage.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Views\LobbyPage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
