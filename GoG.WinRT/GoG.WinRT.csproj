@@ -132,7 +132,6 @@
     </Compile>
     <Compile Include="Migrations\GameContextModelSnapshot.cs" />
     <Compile Include="Model\GameContext.cs" />
-    <Compile Include="Secrets.cs" />
     <Compile Include="Services\FuegoGameEngine.cs" />
     <Compile Include="Services\IGameEngine.cs" />
     <Compile Include="Services\IRepository.cs" />

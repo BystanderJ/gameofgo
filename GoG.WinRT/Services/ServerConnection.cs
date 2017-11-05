@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using GoG.Shared;
 using GoG.Shared.Services.Multiplayer;
 using Microsoft.AspNet.SignalR.Client;
 

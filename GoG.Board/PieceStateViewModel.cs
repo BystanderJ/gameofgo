@@ -9,7 +9,7 @@ namespace GoG.Board
         public PieceStateViewModel(string position, string sequence, GoColor? color,
             bool isHint, bool isNewPiece, bool isNewCapture)
         {
-            _position = position;
+            Position = position;
             _sequence = sequence;
             _color = color;
             _isHint = isHint;
@@ -20,25 +20,21 @@ namespace GoG.Board
         public event EventHandler MultiplePropertiesChanged;
         public event EventHandler TerritoryChanged;
 
-        readonly string _position;
-        public string Position
-        {
-            get { return _position; }
-        }
+        public string Position { get; }
 
-        string _sequence;
+        private string _sequence;
         public string Sequence
         {
             get => _sequence; set => SetProperty(ref _sequence, value);
         }
 
-        GoColor? _color;
+        private GoColor? _color;
         public GoColor? Color
         {
             get => _color; set => SetProperty(ref _color, value);
         }
 
-        GoColor? _territory;
+        private GoColor? _territory;
         public GoColor? Territory
         {
             get => _territory;
@@ -49,19 +45,19 @@ namespace GoG.Board
             }
         }
 
-        bool _isHint;
+        private bool _isHint;
         public bool IsHint
         {
             get => _isHint; set => SetProperty(ref _isHint, value);
         }
 
-        bool _isNewPiece;
+        private bool _isNewPiece;
         public bool IsNewPiece
         {
             get => _isNewPiece; set => SetProperty(ref _isNewPiece, value);
         }
 
-        bool _isNewCapture;
+        private bool _isNewCapture;
         public bool IsNewCapture
         {
             get => _isNewCapture; set => SetProperty(ref _isNewCapture, value);
